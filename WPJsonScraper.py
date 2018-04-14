@@ -41,6 +41,9 @@ def main():
                         help='the base path of the WordPress installation to examine')
     parser.add_argument('-i', '--info', dest='info', action='store_true',
                         help='dumps basic information about the WordPress installation')
+    parser.add_argument('-e', '--endpoints', dest='endpoints',
+                        action='store_true',
+                        help='dumps full endpoint documentation')
     parser.add_argument('-a', '--all', dest='all', action='store_true',
                         help='dumps all available information from the target API')
     parser.add_argument('--no-color', dest='nocolor', action='store_true',
@@ -99,6 +102,14 @@ def main():
             basic_info = scanner.get_basic_info()
             Console.log_info("General information on the target")
             InfoDisplayer.display_basic_info(basic_info)
+        except NoWordpressApi:
+            Console.log_error("No WordPress API available at the given URL (too old WordPress or not WordPress?)")
+
+    if args.endpoints or args.all:
+        try:
+            basic_info = scanner.get_basic_info()
+            Console.log_info("API endpoints")
+            InfoDisplayer.display_endpoints(basic_info)
         except NoWordpressApi:
             Console.log_error("No WordPress API available at the given URL (too old WordPress or not WordPress?)")
 

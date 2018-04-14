@@ -22,6 +22,8 @@ SOFTWARE.
 
 import html
 
+from lib.console import Console
+
 class InfoDisplayer:
     """
     Static class to display information for different categories
@@ -59,4 +61,49 @@ class InfoDisplayer:
                 print('    %s%s' % (ns, tip))
         # TODO, dive into authentication
         print()
-    
+
+    @staticmethod
+    def display_endpoints(information):
+        """
+        Displays endpoint documentation of the WordPress API
+        param information: information as a JSON object
+        """
+        print()
+        if 'routes' not in information.keys():
+            Console.log_error("Did not find the routes for endpoint discovery")
+            return None
+        for url, route in information['routes'].items():
+            print("%s (Namespace: %s)" % (url, route['namespace']))
+            for endpoint in route['endpoints']:
+                methods = "    "
+                first = True
+                for method in endpoint['methods']:
+                    if first:
+                        methods += method
+                        first = False
+                    else:
+                        methods += ", " + method
+                print(methods)
+                if len(endpoint['args']) > 0:
+                    for arg, props in endpoint['args'].items():
+                        required = ""
+                        if props['required']:
+                            required = " (required)"
+                        print("        " + arg + required)
+                        if 'type' in props.keys():
+                            print("            type: " + str(props['type']))
+                        if 'default' in props.keys():
+                            print("            default: " + str(props['default']))
+                        if 'enum' in props.keys():
+                            allowed = "            allowed values: "
+                            first = True
+                            for val in props['enum']:
+                                if first:
+                                    allowed += val
+                                    first = False
+                                else:
+                                    allowed += ", " + val
+                            print(allowed)
+                        if 'description' in props.keys():
+                            print("            " + str(props['description']))
+            print()

@@ -40,19 +40,23 @@ class WPApi:
         self.name = None
         self.description = None
         self.url = target
+        self.basic_info = None
 
     def get_basic_info(self):
         """
         Collects and stores basic information about the target
         """
+        if self.basic_info is not None:
+            return self.basic_info
+
         req = requests.get(self.url + self.api_path)
         if req.status_code >= 400:
             raise NoWordpressApi
-        basic_info = req.json()
-        if 'name' in basic_info.keys():
-            self.name = basic_info['name']
-        if 'description' in basic_info.keys():
-            self.description = basic_info['description']
-        if 'namespaces' in basic_info.keys() and 'wp/v2' in basic_info['namespaces']:
+        self.basic_info = req.json()
+        if 'name' in self.basic_info.keys():
+            self.name = self.basic_info['name']
+        if 'description' in self.basic_info.keys():
+            self.description = self.basic_info['description']
+        if 'namespaces' in self.basic_info.keys() and 'wp/v2' in self.basic_info['namespaces']:
             self.has_v2 = True
-        return basic_info
+        return self.basic_info
