@@ -121,7 +121,7 @@ class InfoDisplayer:
     @staticmethod
     def display_posts(information):
         """
-        Displays posts about published on the WordPress instance
+        Displays posts published on the WordPress instance
         param information: information as a JSON object
         """
         print()
@@ -133,5 +133,29 @@ class InfoDisplayer:
                 line += " - " + html.unescape(post['title']['rendered'])
             if 'link' in post.keys():
                 line += " - " + post['link']
+            print(line)
+        print()
+
+    @staticmethod
+    def display_users(information):
+        """
+        Displays users on the WordPress instance
+        param information: information as a JSON object
+        """
+        print()
+        for user in information:
+            line = ""
+            if 'id' in user.keys():
+                line += "User ID: %d\n" % user['id']
+            if 'name' in user.keys():
+                line += "    Display name: %s\n" % user['name']
+            if 'slug' in user.keys():
+                line += "    User name (probable): %s\n" % user['slug']
+            if 'description' in user.keys():
+                line += "    User description: %s\n" % user['description']
+            if 'url' in user.keys():
+                line += "    User website: %s\n" % user['url']
+            if 'link' in user.keys():
+                line += "    User personal page: %s\n" % user['link']
             print(line)
         print()

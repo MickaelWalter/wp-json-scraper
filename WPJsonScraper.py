@@ -73,6 +73,11 @@ license, check LICENSE.txt for more information""")
                         dest='post_export_folder',
                         action='store',
                         help='export posts to a specified destination folder')
+    parser.add_argument('-u',
+                        '--users',
+                        dest='users',
+                        action='store_true',
+                        help='lists users')
     parser.add_argument('-a',
                         '--all',
                         dest='all',
@@ -155,8 +160,16 @@ license, check LICENSE.txt for more information""")
     if args.posts or args.all:
         try:
             posts_list = scanner.get_all_posts()
-            Console.log_info("Posts list")
+            Console.log_info("Post list")
             InfoDisplayer.display_posts(posts_list)
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+
+    if args.users or args.all:
+        try:
+            users_list = scanner.get_all_users()
+            Console.log_info("User list")
+            InfoDisplayer.display_users(users_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
