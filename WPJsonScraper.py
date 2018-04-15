@@ -93,6 +93,15 @@ license, check LICENSE.txt for more information""")
                         dest='media',
                         action='store_true',
                         help='lists media objects')
+    parser.add_argument('-g',
+                        '--pages',
+                        dest='pages',
+                        action='store_true',
+                        help='lists pages')
+    parser.add_argument('--export-pages',
+                        dest='page_export_folder',
+                        action='store',
+                        help='export pages to a specified destination folder')
     parser.add_argument('-a',
                         '--all',
                         dest='all',
@@ -163,20 +172,19 @@ license, check LICENSE.txt for more information""")
             Console.log_error("No WordPress API available at the given URL "
             "(too old WordPress or not WordPress?)")
 
-    if args.endpoints or args.all:
-        try:
-            basic_info = scanner.get_basic_info()
-            Console.log_info("API endpoints")
-            InfoDisplayer.display_endpoints(basic_info)
-        except NoWordpressApi:
-            Console.log_error("No WordPress API available at the given URL "
-            "(too old WordPress or not WordPress?)")
-
     if args.posts or args.all:
         try:
             posts_list = scanner.get_all_posts()
             Console.log_info("Post list")
             InfoDisplayer.display_posts(posts_list)
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+
+    if args.pages or args.all:
+        try:
+            Console.log_info("Page list")
+            pages_list = scanner.get_all_pages()
+            InfoDisplayer.display_pages(pages_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
@@ -187,6 +195,15 @@ license, check LICENSE.txt for more information""")
             InfoDisplayer.display_users(users_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
+
+    if args.endpoints or args.all:
+        try:
+            basic_info = scanner.get_basic_info()
+            Console.log_info("API endpoints")
+            InfoDisplayer.display_endpoints(basic_info)
+        except NoWordpressApi:
+            Console.log_error("No WordPress API available at the given URL "
+            "(too old WordPress or not WordPress?)")
 
     if args.categories or args.all:
         try:
@@ -227,6 +244,22 @@ license, check LICENSE.txt for more information""")
             if post_number> 0:
                 Console.log_success("Exported %d posts to %s" %
                 (post_number, args.post_export_folder))
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+
+    if args.page_export_folder is not None:
+        try:
+            pages_list = scanner.get_all_pages()
+            users_list = scanner.get_all_users()
+            print()
+            page_number = Exporter.export_posts(pages_list,
+             args.page_export_folder,
+             None,
+             None,
+             users_list)
+            if page_number> 0:
+                Console.log_success("Exported %d pages to %s" %
+                (page_number, args.page_export_folder))
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 

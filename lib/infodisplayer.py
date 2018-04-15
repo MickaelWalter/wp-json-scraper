@@ -126,12 +126,18 @@ class InfoDisplayer:
         param information: information as a JSON object
         """
         print()
+        date_format = "%Y-%m-%dT%H:%M:%S-%Z"
         for post in information:
             line = ""
             if 'id' in post.keys():
                 line += "ID: %d" %post['id']
             if 'title' in post.keys():
                 line += " - " + html.unescape(post['title']['rendered'])
+            if 'date_gmt' in post.keys():
+                date_gmt = datetime.strptime(post['date_gmt'] +
+                                             "-GMT", date_format)
+                line += " on %s" % \
+                        date_gmt.strftime("%d/%m/%Y at %H:%M:%S")
             if 'link' in post.keys():
                 line += " - " + post['link']
             print(line)
@@ -233,5 +239,23 @@ class InfoDisplayer:
                 line += "    Page: %s\n" % media['link']
             if 'source_url' in media.keys():
                 line += "    Source URL: %s\n" % media['source_url']
+            print(line)
+        print()
+
+    @staticmethod
+    def display_pages(information):
+        """
+        Displays pages published on the WordPress instance
+        param information: information as a JSON object
+        """
+        print()
+        for page in information:
+            line = ""
+            if 'id' in page.keys():
+                line += "ID: %d" % page['id']
+            if 'title' in page.keys() and 'rendered' in page['title']:
+                line += " - " + html.unescape(page['title']['rendered'])
+            if 'link' in page.keys():
+                line += " - " + page['link']
             print(line)
         print()

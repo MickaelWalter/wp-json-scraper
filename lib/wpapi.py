@@ -46,6 +46,7 @@ class WPApi:
         self.categories = None
         self.users = None
         self.media = None
+        self.pages = None
 
     def get_basic_info(self):
         """
@@ -200,3 +201,29 @@ class WPApi:
                 more_media = False
             page += 1
         return self.media
+
+    def get_all_pages(self):
+        """
+        Retrieves all pages
+        """
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if not self.has_v2:
+            raise WordPressApiNotV2
+        if self.pages is not None:
+            return self.pages
+
+        self.pages = []
+        page = 1
+        more_pages = True
+        while more_pages:
+            req = requests.get(self.url + self.api_path +
+                               'wp/v2/pages?page=%d' % page)
+            if req.status_code > 400:
+                raise WordPressApiNotV2
+            if type(req.json()) is list and len(req.json()) > 0:
+                self.pages += req.json()
+            else:
+                more_pages = False
+            page += 1
+        return self.pages
