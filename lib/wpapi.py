@@ -22,7 +22,7 @@ SOFTWARE.
 
 import requests
 
-from lib.exceptions import NoWordpressApi
+from lib.exceptions import NoWordpressApi, WordPressApiNotV2
 
 class WPApi:
     """
@@ -41,6 +41,10 @@ class WPApi:
         self.description = None
         self.url = target
         self.basic_info = None
+        self.posts = None
+        self.tags = None
+        self.categories = None
+        self.users = None
 
     def get_basic_info(self):
         """
@@ -60,3 +64,99 @@ class WPApi:
         if 'namespaces' in self.basic_info.keys() and 'wp/v2' in self.basic_info['namespaces']:
             self.has_v2 = True
         return self.basic_info
+
+    def get_all_posts(self):
+        """
+        Retrieves all posts
+        """
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if not self.has_v2:
+            raise WordPressApiNotV2
+        if self.posts is not None:
+            return self.posts
+        self.posts = []
+        page = 1
+        more_posts = True
+        while more_posts:
+            req = requests.get(self.url + self.api_path + 'wp/v2/posts?page=%d' % page)
+            if req.status_code > 400:
+                raise WordPressApiNotV2
+            if type(req.json()) is list and len(req.json()) > 0:
+                self.posts += req.json()
+            else:
+                more_posts = False
+            page += 1
+        return self.posts
+
+    def get_all_tags(self):
+        """
+        Retrieves all tags
+        """
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if not self.has_v2:
+            raise WordPressApiNotV2
+        if self.tags is not None:
+            return self.tags
+        self.tags = []
+        page = 1
+        more_tags = True
+        while more_tags:
+            req = requests.get(self.url + self.api_path + 'wp/v2/tags?page=%d' % page)
+            if req.status_code > 400:
+                raise WordPressApiNotV2
+            if type(req.json()) is list and len(req.json()) > 0:
+                self.tags += req.json()
+            else:
+                more_tags = False
+            page += 1
+        return self.tags
+
+    def get_all_categories(self):
+        """
+        Retrieves all categories
+        """
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if not self.has_v2:
+            raise WordPressApiNotV2
+        if self.categories is not None:
+            return self.categories
+        self.categories = []
+        page = 1
+        more_categories = True
+        while more_categories:
+            req = requests.get(self.url + self.api_path + 'wp/v2/categories?page=%d' % page)
+            if req.status_code > 400:
+                raise WordPressApiNotV2
+            if type(req.json()) is list and len(req.json()) > 0:
+                self.categories += req.json()
+            else:
+                more_categories = False
+            page += 1
+        return self.categories
+
+    def get_all_users(self):
+        """
+        Retrieves all users
+        """
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if not self.has_v2:
+            raise WordPressApiNotV2
+        if self.users is not None:
+            return self.users
+        self.users = []
+        page = 1
+        more_users = True
+        while more_users:
+            req = requests.get(self.url + self.api_path + 'wp/v2/users?page=%d' % page)
+            if req.status_code > 400:
+                raise WordPressApiNotV2
+            if type(req.json()) is list and len(req.json()) > 0:
+                self.users += req.json()
+            else:
+                more_users = False
+            page += 1
+        return self.users

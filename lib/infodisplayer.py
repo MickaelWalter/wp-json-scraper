@@ -107,3 +107,21 @@ class InfoDisplayer:
                         if 'description' in props.keys():
                             print("            " + str(props['description']))
             print()
+
+    @staticmethod
+    def display_posts(information):
+        """
+        Displays posts about published on the WordPress instance
+        param information: information as a JSON object
+        """
+        print()
+        for post in information:
+            line = ""
+            if 'id' in post.keys():
+                line += "ID: %d" %post['id']
+            if 'title' in post.keys():
+                line += " - " + html.unescape(post['title']['rendered'])
+            if 'link' in post.keys():
+                line += " - " + post['link']
+            print(line)
+        print()

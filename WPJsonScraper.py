@@ -29,13 +29,14 @@ import re
 from lib.console import Console
 from lib.wpapi import WPApi
 from lib.infodisplayer import InfoDisplayer
-from lib.exceptions import NoWordpressApi
+from lib.exceptions import NoWordpressApi, WordPressApiNotV2
+from lib.exporter import Exporter
 
 version = '0.1'
 
 def main():
     parser = argparse.ArgumentParser(description='Reads a WP-JSON API on a WordPress installation to retrieve a maximum of publicly available information. These information comprise, but not only: posts, comments, pages, medias or users. As this tool could allow to access confidential (but not well-protected) data, it is recommended that you get first a written permission from the site owner. The author won\'t endorse any liability for misuse of this software',
-    epilog='(c) 2018 Mickaël "Kilawyn" Walter. This program is licensed under the MIT license, check LICENSE.txt for mor information')
+    epilog='(c) 2018 Mickaël "Kilawyn" Walter. This program is licensed under the MIT license, check LICENSE.txt for more information')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + version)
     parser.add_argument('target', type=str,
                         help='the base path of the WordPress installation to examine')
@@ -44,6 +45,12 @@ def main():
     parser.add_argument('-e', '--endpoints', dest='endpoints',
                         action='store_true',
                         help='dumps full endpoint documentation')
+    parser.add_argument('-p', '--posts', dest='posts',
+                        action='store_true',
+                        help='lists published posts')
+    parser.add_argument('--export-posts', dest='post_export_folder',
+                        action='store',
+                        help='export posts to a specified destination folder')
     parser.add_argument('-a', '--all', dest='all', action='store_true',
                         help='dumps all available information from the target API')
     parser.add_argument('--no-color', dest='nocolor', action='store_true',
@@ -113,6 +120,30 @@ def main():
         except NoWordpressApi:
             Console.log_error("No WordPress API available at the given URL (too old WordPress or not WordPress?)")
 
+    if args.posts or args.all:
+        try:
+            posts_list = scanner.get_all_posts()
+            Console.log_info("Posts list")
+            InfoDisplayer.display_posts(posts_list)
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+
+    if args.post_export_folder is not None:
+        try:
+            posts_list = scanner.get_all_posts()
+            tags_list = scanner.get_all_tags()
+            categories_list = scanner.get_all_categories()
+            users_list = scanner.get_all_users()
+            print()
+            post_number = Exporter.export_posts(posts_list,
+             args.post_export_folder,
+             tags_list,
+             categories_list,
+             users_list)
+            if post_number> 0:
+                Console.log_success("Exported %d posts to %s" % (post_number, args.post_export_folder))
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
 
 
 if __name__ == "__main__":
