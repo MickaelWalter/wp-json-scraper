@@ -36,12 +36,17 @@ class InfoDisplayer:
         param information: information as a JSON object
         """
         print()
+
         if 'name' in information.keys():
             print("Site name: %s" % html.unescape(information['name']))
+
         if 'description' in information.keys():
-            print("Site description: %s" % html.unescape(information['description']))
+            print("Site description: %s" %
+                  html.unescape(information['description']))
+
         if 'home' in information.keys():
             print("Site home: %s" % html.unescape(information['home']))
+
         if 'gmt_offset' in information.keys():
             timezone_string = ""
             gmt_offset = information['gmt_offset']
@@ -50,6 +55,7 @@ class InfoDisplayer:
             if 'timezone_string' in information.keys():
                 timezone_string = information['timezone_string']
             print("Site Timezone: %s (GMT%s)" % (timezone_string, gmt_offset))
+
         if 'namespaces' in information.keys():
             print('Namespaces (API provided by addons):')
             for ns in information['namespaces']:
@@ -59,6 +65,7 @@ class InfoDisplayer:
                 elif ns == 'wp/v2':
                     tip = " - The API integrated by default with WordPress 4.7"
                 print('    %s%s' % (ns, tip))
+
         # TODO, dive into authentication
         print()
 
@@ -69,9 +76,11 @@ class InfoDisplayer:
         param information: information as a JSON object
         """
         print()
+
         if 'routes' not in information.keys():
             Console.log_error("Did not find the routes for endpoint discovery")
             return None
+
         for url, route in information['routes'].items():
             print("%s (Namespace: %s)" % (url, route['namespace']))
             for endpoint in route['endpoints']:
@@ -93,7 +102,8 @@ class InfoDisplayer:
                         if 'type' in props.keys():
                             print("            type: " + str(props['type']))
                         if 'default' in props.keys():
-                            print("            default: " + str(props['default']))
+                            print("            default: " +
+                                  str(props['default']))
                         if 'enum' in props.keys():
                             allowed = "            allowed values: "
                             first = True

@@ -22,7 +22,8 @@ SOFTWARE.
 
 def get_by_id(value, id):
     """
-    Utility function to retrieve a value by and ID in a list of dicts, returns None of no correspondance have been made
+    Utility function to retrieve a value by and ID in a list of dicts, returns
+    None of no correspondance have been made
     param value: the dict to process
     param id: the id to get
     """

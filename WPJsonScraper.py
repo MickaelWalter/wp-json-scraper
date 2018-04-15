@@ -35,25 +35,53 @@ from lib.exporter import Exporter
 version = '0.1'
 
 def main():
-    parser = argparse.ArgumentParser(description='Reads a WP-JSON API on a WordPress installation to retrieve a maximum of publicly available information. These information comprise, but not only: posts, comments, pages, medias or users. As this tool could allow to access confidential (but not well-protected) data, it is recommended that you get first a written permission from the site owner. The author won\'t endorse any liability for misuse of this software',
-    epilog='(c) 2018 Mickaël "Kilawyn" Walter. This program is licensed under the MIT license, check LICENSE.txt for more information')
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + version)
-    parser.add_argument('target', type=str,
-                        help='the base path of the WordPress installation to examine')
-    parser.add_argument('-i', '--info', dest='info', action='store_true',
-                        help='dumps basic information about the WordPress installation')
-    parser.add_argument('-e', '--endpoints', dest='endpoints',
+    parser = argparse.ArgumentParser(description=
+"""Reads a WP-JSON API on a WordPress installation to retrieve a maximum of
+publicly available information. These information comprise, but not only:
+posts, comments, pages, medias or users. As this tool could allow to access
+confidential (but not well-protected) data, it is recommended that you get
+first a written permission from the site owner. The author won\'t endorse any
+liability for misuse of this software""",
+    epilog=
+"""(c) 2018 Mickaël "Kilawyn" Walter. This program is licensed under the MIT
+license, check LICENSE.txt for more information""")
+    parser.add_argument('-v',
+                        '--version',
+                        action='version',
+                        version='%(prog)s ' + version)
+    parser.add_argument('target',
+                        type=str,
+                        help='the base path of the WordPress installation to '
+                        'examine')
+    parser.add_argument('-i',
+                        '--info',
+                        dest='info',
+                        action='store_true',
+                        help='dumps basic information about the WordPress '
+                        'installation')
+    parser.add_argument('-e',
+                        '--endpoints',
+                        dest='endpoints',
                         action='store_true',
                         help='dumps full endpoint documentation')
-    parser.add_argument('-p', '--posts', dest='posts',
+    parser.add_argument('-p',
+                        '--posts',
+                        dest='posts',
                         action='store_true',
                         help='lists published posts')
-    parser.add_argument('--export-posts', dest='post_export_folder',
+    parser.add_argument('--export-posts',
+                        dest='post_export_folder',
                         action='store',
                         help='export posts to a specified destination folder')
-    parser.add_argument('-a', '--all', dest='all', action='store_true',
-                        help='dumps all available information from the target API')
-    parser.add_argument('--no-color', dest='nocolor', action='store_true',
+    parser.add_argument('-a',
+                        '--all',
+                        dest='all',
+                        action='store_true',
+                        help='dumps all available information from the '
+                        'target API')
+    parser.add_argument('--no-color',
+                        dest='nocolor',
+                        action='store_true',
                         help='remove color in the output (e.g. to pipe it)')
 
     args = parser.parse_args()
@@ -70,7 +98,9 @@ def main():
     WPJsonScraper v%s
     By Mickaël \"Kilawyn\" Walter
 
-    Make sure you use this tool with the approval of the site owner. Even if these information are public or available with proper authentication, this could be considered as an intrusion.
+    Make sure you use this tool with the approval of the site owner. Even if
+    these information are public or available with proper authentication, this
+    could be considered as an intrusion.
 
     Target: %s
 
@@ -110,7 +140,8 @@ def main():
             Console.log_info("General information on the target")
             InfoDisplayer.display_basic_info(basic_info)
         except NoWordpressApi:
-            Console.log_error("No WordPress API available at the given URL (too old WordPress or not WordPress?)")
+            Console.log_error("No WordPress API available at the given URL "
+            "(too old WordPress or not WordPress?)")
 
     if args.endpoints or args.all:
         try:
@@ -118,7 +149,8 @@ def main():
             Console.log_info("API endpoints")
             InfoDisplayer.display_endpoints(basic_info)
         except NoWordpressApi:
-            Console.log_error("No WordPress API available at the given URL (too old WordPress or not WordPress?)")
+            Console.log_error("No WordPress API available at the given URL "
+            "(too old WordPress or not WordPress?)")
 
     if args.posts or args.all:
         try:
@@ -141,7 +173,8 @@ def main():
              categories_list,
              users_list)
             if post_number> 0:
-                Console.log_success("Exported %d posts to %s" % (post_number, args.post_export_folder))
+                Console.log_success("Exported %d posts to %s" %
+                (post_number, args.post_export_folder))
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 

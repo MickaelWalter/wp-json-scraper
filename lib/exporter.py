@@ -33,13 +33,15 @@ class Exporter:
     """
 
     @staticmethod
-    def export_posts(posts, folder, tags_list=None, categories_list=None, users_list=None):
+    def export_posts(posts, folder, tags_list=None, categories_list=None,
+    users_list=None):
         """
         Exports posts as HTML to specified export folder
         param posts: the posts to export
         param folder: the export folder
         param tags_list: a list of tags to associate them with tag ids
-        param categories_list: a list of categories to associate them with category ids
+        param categories_list: a list of categories to associate them with
+        category ids
         param user_list: a list of users to associate them with author id
         """
         exported_posts = 0
@@ -48,37 +50,52 @@ class Exporter:
         for post in posts:
             post_file = None
             if 'slug' in post.keys():
-                post_file = open(os.path.join(folder, post['slug'])+".html", "wt")
+                post_file = open(os.path.join(folder, post['slug'])+".html",
+                "wt")
             else:
-                post_file = open(os.path.join(folder, str(post['id']))+".html", "wt")
+                post_file = open(os.path.join(folder, str(post['id']))+".html",
+                "wt")
+
             title = "Unknown"
             if 'title' in post.keys() and 'rendered' in post['title'].keys():
                 title = post['title']['rendered']
-            date_gmt = "Unknown"
+
             date_format = "%Y-%m-%dT%H:%M:%S-%Z"
+
+            date_gmt = "Unknown"
             if 'date_gmt' in post.keys():
-                date_gmt = datetime.strptime(post['date_gmt']+"-GMT", date_format)
+                date_gmt = datetime.strptime(post['date_gmt'] +
+                                             "-GMT", date_format)
             modified_gmt = "Unknown"
             if 'modified_gmt' in post.keys():
-                modified_gmt = datetime.strptime(post['modified_gmt']+"-GMT", date_format)
+                modified_gmt = datetime.strptime(post['modified_gmt'] +
+                                                 "-GMT", date_format)
             status = "Unknown"
             if 'status' in post.keys():
                 status = post['status']
+
             post_type = "Unknown"
             if 'type' in post.keys():
                 post_type = post['type']
+
             link = "Unknown"
             if 'link' in post.keys():
                 link = html.escape(post['link'])
+
             comments = "Unknown"
             if 'comment_status' in post.keys():
                 comments = html.escape(post['comment_status'])
+
             content = "Unknown"
-            if 'content' in post.keys() and 'rendered' in post['content'].keys():
+            if 'content' in post.keys() and 'rendered' in \
+                    post['content'].keys():
                 content = post['content']['rendered']
+
             excerpt = "Unknown"
-            if 'excerpt' in post.keys() and 'rendered' in post['excerpt'].keys():
+            if 'excerpt' in post.keys() and 'rendered' in \
+                    post['excerpt'].keys():
                 excerpt = post['excerpt']['rendered']
+
             author = "Unknown"
             if 'author' in post.keys() and users_list is not None:
                 author_obj = get_by_id(users_list, post['author'])
@@ -89,7 +106,8 @@ class Exporter:
                     if 'slug' in author_obj.keys():
                         author += "(%s)" % author_obj['slug']
                     if 'link' in author_obj.keys():
-                        author += " - <a href=\"%s\">%s</a>" % (author_obj['link'], author_obj['link'])
+                        author += " - <a href=\"%s\">%s</a>" % \
+                                  (author_obj['link'], author_obj['link'])
             elif 'author' in post.keys():
                 author = str(post['author'])
 
@@ -103,12 +121,15 @@ class Exporter:
                         if 'name' in cat_obj.keys():
                             categories += cat_obj['name']
                         if 'link' in cat_obj.keys():
-                            categories += " - <a href=\"%s\">%s</a>" % (html.escape(cat_obj['link']), html.escape(cat_obj['link']))
+                            categories += " - <a href=\"%s\">%s</a>" % \
+                                          (html.escape(cat_obj['link']),
+                                           html.escape(cat_obj['link']))
                     categories += "</li>"
             elif 'categories' in post.keys():
                 categories = ""
                 for cat in post['categories']:
                     categories += "<li>" + str(post['categories']) + "</li>"
+
             tags = "<li>Unknown</li>"
             if 'tags' in post.keys() and tags_list is not None:
                 tags = ""
@@ -119,12 +140,15 @@ class Exporter:
                         if 'name' in tag_obj.keys():
                             tags += tag_obj['name']
                         if 'link' in tag_obj.keys():
-                            tags += " - <a href=\"%s\">%s</a>" % (html.escape(tag_obj['link']), html.escape(tag_obj['link']))
+                            tags += " - <a href=\"%s\">%s</a>" % \
+                                    (html.escape(tag_obj['link']),
+                                     html.escape(tag_obj['link']))
                     tags += "</li>"
             elif 'tags' in post.keys():
                 tags = ""
                 for cat in post['tags']:
                     tags += "<li>" + str(post['categories']) + "</li>"
+
             buffer = \
 """<!DOCTYPE html>
 <html>
