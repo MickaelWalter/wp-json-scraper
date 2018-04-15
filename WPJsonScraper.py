@@ -78,11 +78,21 @@ license, check LICENSE.txt for more information""")
                         dest='users',
                         action='store_true',
                         help='lists users')
+    parser.add_argument('-t',
+                        '--tags',
+                        dest='tags',
+                        action='store_true',
+                        help='lists tags')
     parser.add_argument('-c',
                         '--categories',
                         dest='categories',
                         action='store_true',
                         help='lists categories')
+    parser.add_argument('-m',
+                        '--media',
+                        dest='media',
+                        action='store_true',
+                        help='lists media objects')
     parser.add_argument('-a',
                         '--all',
                         dest='all',
@@ -183,6 +193,22 @@ license, check LICENSE.txt for more information""")
             categories_list = scanner.get_all_categories()
             Console.log_info("Category list")
             InfoDisplayer.display_categories(categories_list)
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+
+    if args.tags or args.all:
+        try:
+            tags_list = scanner.get_all_tags()
+            Console.log_info("Tags list")
+            InfoDisplayer.display_tags(tags_list)
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+
+    if args.media or args.all:
+        try:
+            Console.log_info("Media list")
+            media_list = scanner.get_all_media()
+            InfoDisplayer.display_media(media_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 

@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 import html
+from datetime import datetime
 
 from lib.console import Console
 
@@ -178,6 +179,59 @@ class InfoDisplayer:
             if 'count' in category.keys():
                 line += "    Number of posts: %d\n" % category['count']
             if 'link' in category.keys():
-                line += "    User personal page: %s\n" % category['link']
+                line += "    Page: %s\n" % category['link']
+            print(line)
+        print()
+
+    @staticmethod
+    def display_tags(information):
+        """
+        Displays tags of the WordPress instance
+        param information: information as a JSON object
+        """
+        print()
+        for tag in information:
+            line = ""
+            if 'id' in tag.keys():
+                line += "Tag ID: %d\n" % tag['id']
+            if 'name' in tag.keys():
+                line += "    Name: %s\n" % tag['name']
+            if 'description' in tag.keys():
+                line += "    Description: %s\n" % tag['description']
+            if 'count' in tag.keys():
+                line += "    Number of posts: %d\n" % tag['count']
+            if 'link' in tag.keys():
+                line += "    Page: %s\n" % tag['link']
+            print(line)
+        print()
+
+    @staticmethod
+    def display_media(information):
+        """
+        Displays media objects of the WordPress instance
+        param information: information as a JSON object
+        """
+        print()
+        date_format = "%Y-%m-%dT%H:%M:%S-%Z"
+        for media in information:
+            line = ""
+            if 'id' in media.keys():
+                line += "Media ID: %d\n" % media['id']
+            if 'title' in media.keys() and 'rendered' in media['title']:
+                line += "    Media title: %s\n" % \
+                        html.unescape(media['title']['rendered'])
+            if 'date_gmt' in media.keys():
+                date_gmt = datetime.strptime(media['date_gmt'] +
+                                             "-GMT", date_format)
+                line += "    Upload date (GMT): %s\n" % \
+                        date_gmt.strftime("%d/%m/%Y %H:%M:%S")
+            if 'media_type' in media.keys():
+                line += "    Media type: %s\n" % media['media_type']
+            if 'mime_type' in media.keys():
+                line += "    Mime type: %s\n" % media['mime_type']
+            if 'link' in media.keys():
+                line += "    Page: %s\n" % media['link']
+            if 'source_url' in media.keys():
+                line += "    Source URL: %s\n" % media['source_url']
             print(line)
         print()

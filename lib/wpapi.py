@@ -45,6 +45,7 @@ class WPApi:
         self.tags = None
         self.categories = None
         self.users = None
+        self.media = None
 
     def get_basic_info(self):
         """
@@ -173,3 +174,29 @@ class WPApi:
                 more_users = False
             page += 1
         return self.users
+
+    def get_all_media(self):
+        """
+        Retrieves all media objects
+        """
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if not self.has_v2:
+            raise WordPressApiNotV2
+        if self.media is not None:
+            return self.media
+
+        self.media = []
+        page = 1
+        more_media = True
+        while more_media:
+            req = requests.get(self.url + self.api_path +
+                               'wp/v2/media?page=%d' % page)
+            if req.status_code > 400:
+                raise WordPressApiNotV2
+            if type(req.json()) is list and len(req.json()) > 0:
+                self.media += req.json()
+            else:
+                more_media = False
+            page += 1
+        return self.media

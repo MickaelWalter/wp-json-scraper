@@ -45,6 +45,9 @@ class Exporter:
         param user_list: a list of users to associate them with author id
         """
         exported_posts = 0
+
+        date_format = "%Y-%m-%dT%H:%M:%S-%Z"
+
         if not os.path.isdir(folder):
             os.makedirs(folder)
         for post in posts:
@@ -59,8 +62,6 @@ class Exporter:
             title = "Unknown"
             if 'title' in post.keys() and 'rendered' in post['title'].keys():
                 title = post['title']['rendered']
-
-            date_format = "%Y-%m-%dT%H:%M:%S-%Z"
 
             date_gmt = "Unknown"
             if 'date_gmt' in post.keys():
