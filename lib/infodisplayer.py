@@ -159,3 +159,25 @@ class InfoDisplayer:
                 line += "    User personal page: %s\n" % user['link']
             print(line)
         print()
+
+    @staticmethod
+    def display_categories(information):
+        """
+        Displays categories of the WordPress instance
+        param information: information as a JSON object
+        """
+        print()
+        for category in information:
+            line = ""
+            if 'id' in category.keys():
+                line += "Category ID: %d\n" % category['id']
+            if 'name' in category.keys():
+                line += "    Name: %s\n" % category['name']
+            if 'description' in category.keys():
+                line += "    Description: %s\n" % category['description']
+            if 'count' in category.keys():
+                line += "    Number of posts: %d\n" % category['count']
+            if 'link' in category.keys():
+                line += "    User personal page: %s\n" % category['link']
+            print(line)
+        print()

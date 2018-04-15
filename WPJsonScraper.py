@@ -78,6 +78,11 @@ license, check LICENSE.txt for more information""")
                         dest='users',
                         action='store_true',
                         help='lists users')
+    parser.add_argument('-c',
+                        '--categories',
+                        dest='categories',
+                        action='store_true',
+                        help='lists categories')
     parser.add_argument('-a',
                         '--all',
                         dest='all',
@@ -170,6 +175,14 @@ license, check LICENSE.txt for more information""")
             users_list = scanner.get_all_users()
             Console.log_info("User list")
             InfoDisplayer.display_users(users_list)
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+
+    if args.categories or args.all:
+        try:
+            categories_list = scanner.get_all_categories()
+            Console.log_info("Category list")
+            InfoDisplayer.display_categories(categories_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
