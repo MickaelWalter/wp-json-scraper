@@ -31,6 +31,7 @@ from lib.wpapi import WPApi
 from lib.infodisplayer import InfoDisplayer
 from lib.exceptions import NoWordpressApi, WordPressApiNotV2
 from lib.exporter import Exporter
+from lib.requestsession import RequestSession
 
 version = '0.1'
 
@@ -108,10 +109,26 @@ license, check LICENSE.txt for more information""")
                         action='store_true',
                         help='dumps all available information from the '
                         'target API')
+    parser.add_argument('--proxy',
+                        dest='proxy_server',
+                        action='store',
+                        help='define a proxy server to use, e.g. for '
+                        'enterprise network or debugging')
+    parser.add_argument('--auth',
+                        dest='credentials',
+                        action='store',
+                        help='define a username and a password separated by '
+                        'a colon to use them as basic authentication')
+    parser.add_argument('--cookies',
+                        dest='cookies',
+                        action='store',
+                        help='define specific cookies to send with the request '
+                        'in the format cookie1=foo; cookie2=bar')
     parser.add_argument('--no-color',
                         dest='nocolor',
                         action='store_true',
                         help='remove color in the output (e.g. to pipe it)')
+
 
     args = parser.parse_args()
 
@@ -148,21 +165,29 @@ license, check LICENSE.txt for more information""")
     if re.match(r'^.+/$', target) is None:
         target += "/"
 
+    proxy = None
+    if args.proxy_server is not None:
+        proxy = args.proxy_server
+    cookies = None
+    if args.cookies is not None:
+        cookies = args.cookies
+    authorization = None
+    if args.credentials is not None:
+        authorization_list = args.credentials.split(':')
+        if len(authorization_list) == 1:
+            authorization = (authorization_list[0], '')
+        elif len(authorization_list) >= 2:
+            authorization = (authorization_list[0],
+              ':'.join(authorization_list[1:]))
+    session = RequestSession(proxy=proxy, cookies=cookies,
+      authorization=authorization)
     try:
-        connectivity_check = requests.get(target)
+        connectivity_check = session.get(target)
         Console.log_success("Connection OK")
-    except requests.ConnectionError as e:
-        if "Errno -5" in str(e) or "Errno -2" in str(e):
-            Console.log_error("Could not resolve host %s" % target)
-        elif "Errno 111" in str(e):
-            Console.log_error("Connection refused by %s" % target)
-        elif "RemoteDisconnected" in str(e):
-            Console.log_error("Connection reset by %s" % target)
-        else:
-            print(e)
+    except Exception as e:
         exit(0)
 
-    scanner = WPApi(target)
+    scanner = WPApi(target, session=session)
     if args.info or args.all:
         try:
             basic_info = scanner.get_basic_info()

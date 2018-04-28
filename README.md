@@ -43,6 +43,10 @@ in these ones :
 * -c, --categories: list all categories
 * -m, --media: list all public media objects
 * -g, --pages: list all public pages
+* --proxy PROXY_URL force the data to pass through a specified proxy server
+* --auth CREDENTIALS use the specified credentials as basic HTTP auth for the
+server
+* --cookies COOKIES add specified Cookies to the requests
 * --no-color: remove color (for example to redirect the output to a file)
 
 Moreover, you can export contents of pages and posts to a folder in separate
@@ -50,6 +54,14 @@ files:
 
 * --export-pages PAGE_EXPORT_FOLDER
 * --export-posts POST_EXPORT_FOLDER
+
+You can set the proxy server with the --proxy flag. It can be an HTTP or HTTPS
+as described in Python requests documentation. By default the proxy servers of
+the system are used.
+
+Example:
+
+    http://user:password@example.com:8080/
 
 ## Features to implement
 
@@ -60,5 +72,4 @@ the moment. Some of the features that could be implemented in the future are:
 * Comments dumping
 * Plugins support
 * Specific retrievals by id or search options
-* Authentication support
-* Proxy support
+* Authentication support with NTLM

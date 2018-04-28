@@ -23,17 +23,19 @@ SOFTWARE.
 import requests
 
 from lib.exceptions import NoWordpressApi, WordPressApiNotV2
+from lib.requestsession import RequestSession, HTTPError400
 
 class WPApi:
     """
     Queries the WordPress API to retrieve information
     """
 
-    def __init__(self, target, api_path="wp-json/"):
+    def __init__(self, target, api_path="wp-json/", session=None):
         """
         Creates a new instance of WPApi
         param target: the target of the scan
         param api_path: the api path, if non-default
+        param session: the requests session object to use for HTTP requests
         """
         self.api_path = api_path
         self.has_v2 = None
@@ -47,6 +49,12 @@ class WPApi:
         self.users = None
         self.media = None
         self.pages = None
+        self.s = None
+
+        if session is not None:
+            self.s = session
+        else:
+            self.s = RequestSession()
 
     def get_basic_info(self):
         """
@@ -55,7 +63,10 @@ class WPApi:
         if self.basic_info is not None:
             return self.basic_info
 
-        req = requests.get(self.url + self.api_path)
+        try:
+            req = self.s.get(self.url + self.api_path)
+        except Exception:
+            return None
         if req.status_code >= 400:
             raise NoWordpressApi
         self.basic_info = req.json()
@@ -81,8 +92,11 @@ class WPApi:
         more_entries = True
         entries = []
         while more_entries:
-            req = requests.get(self.url + self.api_path + (url % page))
-            if req.status_code > 400:
+            try:
+                req = self.s.get(self.url + self.api_path + (url % page))
+            except HTTPError400:
+                break
+            except Exception:
                 raise WordPressApiNotV2
             if type(req.json()) is list and len(req.json()) > 0:
                 entries += req.json()
