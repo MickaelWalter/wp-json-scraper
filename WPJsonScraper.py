@@ -171,6 +171,7 @@ license, check LICENSE.txt for more information""")
         except NoWordpressApi:
             Console.log_error("No WordPress API available at the given URL "
             "(too old WordPress or not WordPress?)")
+            exit()
 
     if args.posts or args.all:
         try:
@@ -204,6 +205,7 @@ license, check LICENSE.txt for more information""")
         except NoWordpressApi:
             Console.log_error("No WordPress API available at the given URL "
             "(too old WordPress or not WordPress?)")
+            exit()
 
     if args.categories or args.all:
         try:

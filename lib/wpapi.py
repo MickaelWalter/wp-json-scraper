@@ -72,6 +72,26 @@ class WPApi:
 
         return self.basic_info
 
+    def crawl_pages(self, url):
+        """
+        Crawls all pages while there is at least one result for the given
+        endpoint
+        """
+        page = 1
+        more_entries = True
+        entries = []
+        while more_entries:
+            req = requests.get(self.url + self.api_path + (url % page))
+            if req.status_code > 400:
+                raise WordPressApiNotV2
+            if type(req.json()) is list and len(req.json()) > 0:
+                entries += req.json()
+            else:
+                more_entries = False
+            page += 1
+
+        return entries
+
     def get_all_posts(self):
         """
         Retrieves all posts
@@ -83,19 +103,7 @@ class WPApi:
         if self.posts is not None:
             return self.posts
 
-        self.posts = []
-        page = 1
-        more_posts = True
-        while more_posts:
-            req = requests.get(self.url + self.api_path +
-                               'wp/v2/posts?page=%d' % page)
-            if req.status_code > 400:
-                raise WordPressApiNotV2
-            if type(req.json()) is list and len(req.json()) > 0:
-                self.posts += req.json()
-            else:
-                more_posts = False
-            page += 1
+        self.posts = self.crawl_pages('wp/v2/posts?page=%d')
         return self.posts
 
     def get_all_tags(self):
@@ -109,19 +117,7 @@ class WPApi:
         if self.tags is not None:
             return self.tags
 
-        self.tags = []
-        page = 1
-        more_tags = True
-        while more_tags:
-            req = requests.get(self.url + self.api_path +
-                               'wp/v2/tags?page=%d' % page)
-            if req.status_code > 400:
-                raise WordPressApiNotV2
-            if type(req.json()) is list and len(req.json()) > 0:
-                self.tags += req.json()
-            else:
-                more_tags = False
-            page += 1
+        self.tags = self.crawl_pages('wp/v2/tags?page=%d')
         return self.tags
 
     def get_all_categories(self):
@@ -135,19 +131,7 @@ class WPApi:
         if self.categories is not None:
             return self.categories
 
-        self.categories = []
-        page = 1
-        more_categories = True
-        while more_categories:
-            req = requests.get(self.url + self.api_path +
-                               'wp/v2/categories?page=%d' % page)
-            if req.status_code > 400:
-                raise WordPressApiNotV2
-            if type(req.json()) is list and len(req.json()) > 0:
-                self.categories += req.json()
-            else:
-                more_categories = False
-            page += 1
+        self.categories = self.crawl_pages('wp/v2/categories?page=%d')
         return self.categories
 
     def get_all_users(self):
@@ -161,19 +145,7 @@ class WPApi:
         if self.users is not None:
             return self.users
 
-        self.users = []
-        page = 1
-        more_users = True
-        while more_users:
-            req = requests.get(self.url + self.api_path +
-                               'wp/v2/users?page=%d' % page)
-            if req.status_code > 400:
-                raise WordPressApiNotV2
-            if type(req.json()) is list and len(req.json()) > 0:
-                self.users += req.json()
-            else:
-                more_users = False
-            page += 1
+        self.users = self.crawl_pages('wp/v2/users?page=%d')
         return self.users
 
     def get_all_media(self):
@@ -187,19 +159,7 @@ class WPApi:
         if self.media is not None:
             return self.media
 
-        self.media = []
-        page = 1
-        more_media = True
-        while more_media:
-            req = requests.get(self.url + self.api_path +
-                               'wp/v2/media?page=%d' % page)
-            if req.status_code > 400:
-                raise WordPressApiNotV2
-            if type(req.json()) is list and len(req.json()) > 0:
-                self.media += req.json()
-            else:
-                more_media = False
-            page += 1
+        self.media = self.crawl_pages('wp/v2/media?page=%d')
         return self.media
 
     def get_all_pages(self):
@@ -213,17 +173,5 @@ class WPApi:
         if self.pages is not None:
             return self.pages
 
-        self.pages = []
-        page = 1
-        more_pages = True
-        while more_pages:
-            req = requests.get(self.url + self.api_path +
-                               'wp/v2/pages?page=%d' % page)
-            if req.status_code > 400:
-                raise WordPressApiNotV2
-            if type(req.json()) is list and len(req.json()) > 0:
-                self.pages += req.json()
-            else:
-                more_pages = False
-            page += 1
+        self.pages = self.crawl_pages('wp/v2/pages?page=%d')
         return self.pages
