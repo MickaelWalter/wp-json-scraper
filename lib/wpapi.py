@@ -66,7 +66,7 @@ class WPApi:
         try:
             req = self.s.get(self.url + self.api_path)
         except Exception:
-            return None
+            raise NoWordpressApi
         if req.status_code >= 400:
             raise NoWordpressApi
         self.basic_info = req.json()
