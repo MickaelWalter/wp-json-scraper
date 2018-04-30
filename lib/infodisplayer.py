@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 import html
+import csv
 from datetime import datetime
 
 from lib.console import Console
@@ -59,12 +60,32 @@ class InfoDisplayer:
 
         if 'namespaces' in information.keys():
             print('Namespaces (API provided by addons):')
+            ns_ref = {}
+            try:
+                ns_ref_file = open("lib/plugins/plugin_list.csv", "rt")
+                ns_ref_reader = csv.reader(ns_ref_file)
+                for row in ns_ref_reader:
+                    desc = None
+                    url = None
+                    if len(row) > 1 and len(row[1]) > 0:
+                        desc = row[1]
+                    if len(row) > 2 and len(row[2]) > 0:
+                        url = row[2]
+                    ns_ref[row[0]] = {"desc": desc, "url": url}
+                ns_ref_file.close()
+            except:
+                Console.log_error("Could not load namespaces reference file")
             for ns in information['namespaces']:
                 tip = ""
-                if ns == 'oembed/1.0':
-                    tip = " - Allows embedded representation of a URL"
-                elif ns == 'wp/v2':
-                    tip = " - The API integrated by default with WordPress 4.7"
+                if ns in ns_ref.keys():
+                    if ns_ref[ns]['desc'] is not None:
+                        if tip == "":
+                            tip += " - "
+                        tip += ns_ref[ns]['desc']
+                    if ns_ref[ns]['url'] is not None:
+                        if tip == "":
+                            tip += " - "
+                        tip += " - " + ns_ref[ns]['url']
                 print('    %s%s' % (ns, tip))
 
         # TODO, dive into authentication

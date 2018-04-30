@@ -1,0 +1,189 @@
+oembed/1.0,Allows embedded representation of a URL,
+contact-form-7/v1,Manages multiple contact forms,https://wordpress.org/plugins/contact-form-7/
+wc/v1,WooCommerce is a free eCommerce plugin that allows to sell anything,https://wordpress.org/plugins/woocommerce/
+wc/v2,WooCommerce is a free eCommerce plugin that allows to sell anything,https://wordpress.org/plugins/woocommerce/
+facebook/v1,,
+regenerate-thumbnails/v1,Regenerate Thumbnails allows to regenerate all thumbnail sizes for one or more images,https://wordpress.org/plugins/regenerate-thumbnails/
+wp/v2,The default API integrated since WordPress 4.7,https://developer.wordpress.org/rest-api/
+akismet/v1,Akismet checks comments and contact form submissions against a global database of spam,https://wordpress.org/plugins/akismet/
+yoast/v1,Yoast SEO is a WordPress SEO plugin,https://wordpress.org/plugins/wordpress-seo/
+wp-super-cache/v1,This plugin generates static html files from your dynamic WordPress blog,https://wordpress.org/plugins/wp-super-cache/
+script-manager/v1,,
+jetpack/v4,Hassle-free design and marketing,https://wordpress.org/plugins/jetpack/
+redirection/v1,Redirection is the most popular redirect manager for WordPress,https://wordpress.org/plugins/redirection/
+tribe/events/v1,Create and manage an events calendar,https://wordpress.org/plugins/the-events-calendar/
+2fa/v1,,
+wpsc/v1,,
+v1/products/,,
+v1/cart/,,
+v1/,,
+post-views-counter,Counts views of posts of the website,https://wordpress.org/plugins/post-views-counter/
+frm-admin/v1,,
+listo/v1,Listo is a simple plugin that supplies other plugins and themes with commonly used lists,https://wordpress.org/plugins/listo/
+themeisle-sdk/v1,,
+bogo/v1,Bogo is a straight-forward multilingual plugin for WordPress,https://wordpress.org/plugins/bogo/
+envira/v1,Responsive Image Gallery for WordPress,https://wordpress.org/plugins/envira-gallery-lite/
+disqus/v1,Disqus is the web’s most popular commenting system,https://wordpress.org/plugins/disqus-comment-system/
+invitations-for-slack/v1,Invitations for Slack allows to show “Join us on Slack.” buttons,https://wordpress.org/plugins/invitations-for-slack/
+rop/v1,Revive Old Posts helps to keep the old posts alive by automatically sharing them on Social Networks,https://wordpress.org/plugins/tweet-old-post/
+cf-api/v2,,
+thrive,,
+om-cc,,
+om/fiw,,
+tatsu/v1,,
+semplice/v1/editor,,
+semplice/v1/admin,,
+semplice/v1/frontend,,
+jwt-auth/v1,,
+pum/v1,,
+deliciousbrains/v1,,
+sportspress/v2,Creates a professional sports website,https://wordpress.org/plugins/sportspress/
+content-forms/v1,,
+wp_live_chat_support/v1,Fully functional Live Chat plugin,https://wordpress.org/plugins/wp-live-chat-support/
+if-menu/v1,Control what menu items visitors see based on visibility rules,https://wordpress.org/plugins/if-menu/
+iowd/v1,,
+save,,
+facetwp/v1/,,
+slimstat/v1,A web analytics plugin for WordPress,https://wordpress.org/plugins/wp-slimstat/
+social-share/v1,,
+social-counts/v1,,
+swp_api,,
+app/v2,,
+alids/v1/,,
+template-directory,,
+customify/v1,With Customify developers can easily create advanced theme-specific options inside the WordPress Customizer,https://wordpress.org/plugins/customify/
+pixcare/v1,,
+codepinch/v1,A website error correcter?,https://wordpress.org/plugins/wp-error-fix/
+blc/v1,Broken Link Checker?,https://wordpress.org/plugins/broken-link-checker/
+visualizer/v1,,
+td-composer,,
+tdw,,
+mpp/v1,,
+wooketing/v1,,
+gf/v2,,
+wpcsp/v1,Set the CSP settings and will add them to the page the visitor requested,https://wordpress.org/plugins/wp-content-security-policy/
+instant-images,One click uploads of Unsplash photos,https://wordpress.org/plugins/instant-images/
+api,,
+templates-directory,,
+rollbar/v1,Rollbar collects errors and allows to analyze them,https://wordpress.org/plugins/rollbar/
+liveblog/v1,Quick and simple blogging for following fast-paced events,https://wordpress.org/plugins/liveblog/
+integrity-checker/v1,Verifies that all installed code is identical to it’s original version and more,https://wordpress.org/plugins/integrity-checker/
+pll/v1,,
+wp-post-modal/v1,,
+quiz-survey-master/v1,Creates surveys for the users,https://wordpress.org/plugins/quiz-master-next/
+rp-wapi/v1,,
+wc-product-add-ons/v1,WooCommerce PPOM (Personalized Product Option Manager) Plugin adds input fields on product page,https://wordpress.org/plugins/search/wc+products/
+wpglib/v1,,
+tcm/v1,,
+affwp/v1,,
+custom-api/v1,,
+wplr/v1,"Synchronizes photos, collections, keywords and metadata between Lightroom and WordPress",https://wordpress.org/plugins/search/wplr/
+acf/v3,Exposes Advanced Custom Fields Endpoints in the WordPress REST API,https://wordpress.org/plugins/acf-to-rest-api/
+pp/v1,,
+dooplay,,
+dbmovies,,
+pciextranet/v2,,
+cloozi/rest,,
+store-locator-plus/v1,Maps locations on Google Maps,https://wordpress.org/plugins/store-locator-le/
+store-locator-plus/v2,Maps locations on Google Maps,https://wordpress.org/plugins/store-locator-le/
+joinzee-wp/v1,,
+ccf/v1,Custom Contact Forms?,https://wordpress.org/plugins/custom-contact-forms/
+keremiya,,
+pageviews/1.0,A simple and lightweight pageviews counter,https://wordpress.org/plugins/pageviews/
+watchful/v1,,
+shortcode-change,,
+shortcode-insert,,
+upload/,,
+sync/,,
+download/,,
+agroopwoo,,
+rest-routes/v2,Building custom endpoints for WP REST API made easy,https://wordpress.org/plugins/rest-routes/
+pvc/v1,,
+ee/v4.8.29,,
+ee/v4.8.33,,
+ee/v4.8.34,,
+ee/v4.8.36,,
+vegashero/v1,,
+ml-api/v2,,
+mwl/v1,,
+envira-background/v1,,
+api/v1,,
+rta,,
+stec/v2,,
+erp/v1,,
+autofill/v1,,
+/autofill/v1,,
+rest/v1,,
+wp/v2/acf,,
+ms/api,,
+siso/v1,,
+dp/v1,,
+indieauth/1.0,IndieAuth is a way for doing Web sign-in,https://wordpress.org/plugins/indieauth/
+sloc_geo/1.0,,
+link-preview/1.0,Display a preview for a URL similar to sharing a link on Facebook,https://wordpress.org/plugins/wp-link-preview/
+webmention/1.0,Enable conversation across the web,https://wordpress.org/plugins/webmention/
+bballs,,
+logbook/v1,This plugin is for logging users' activities,https://wordpress.org/plugins/search/logbook/
+child-themify/v1,Create child themes with the click of a button,https://wordpress.org/plugins/child-themify/
+versionpress,,
+keliron/api/v3,,
+bablic,Translate WP with this multilingual plugin,https://wordpress.org/plugins/bablic/
+eum/v1,,
+tvo/v1,,
+frm/v2,,
+app-mobile,,
+ap3/v1,,
+diets/v1,,
+manage-customers/v1,,
+leads,WordPress Leads?,https://wordpress.org/plugins/leads/
+commentcava/v1.0,CommentCaVa disables the comment field for a certain amount of time,https://wordpress.org/plugins/commentcava/
+lscf_rest,Advanced WordPress Filter Plugin,https://wordpress.org/plugins/live-search-custom-fields-lite/
+wpv/v1,,
+tho/v1,,
+aghigh/v1,,
+spnl/v1,A Newsletter Plugin for WordPress,https://wordpress.org/plugins/search/spnl/
+task_manager/v1,Task manager,https://wordpress.org/plugins/task-manager/ 
+customfiy/v1,Theme Customizer Booster,https://wordpress.org/plugins/customify/
+CHifcoRegCardPluginV2/v1,,
+CHifcoFireBasePlugin/v1,,
+CHifcoFireBaseVII/v2,,
+wp-api-menus/v2,,
+envira-lightroom/v3,Envira Gallery allows you to create photo galleries and video galleries,https://wordpress.org/plugins/envira-gallery-lite/
+comments/v1,,
+addcomment/v1,,
+pf/v1,,
+postmatic/v1,,
+ivole/v1,Customer Reviews for WooCommerce?,https://wordpress.org/plugins/customer-reviews-woocommerce/
+shwcp/v1,,
+wp-rest-api-log,WordPress plugin to log REST API requests and responses,https://wordpress.org/plugins/wp-rest-api-log/
+wk/v1,,
+sfp-live-search/v1,,
+csco/v1,,
+caos/v1,A plugin that inserts the Analytics tracking code,https://wordpress.org/plugins/host-analyticsjs-local/
+rest/events,,
+obfx-google-analytics,,
+shariff/v1,Shariff provides share buttons that respect the privacy of visitors,https://wordpress.org/plugins/shariff/
+wp-discourse/v1,This plugin allows to use Discourse as a community engine,https://wordpress.org/plugins/wp-discourse/
+dbmvs,,
+wp-crm/v1/form,This plugin is intended to significantly improve user management,https://wordpress.org/plugins/wp-crm/
+gutenberg/v1,A new editing experience for WordPress,https://wordpress.org/plugins/gutenberg/
+tribe_events/v2,,
+rnet/v1,,
+eklo/v2,,
+menus/v1,,
+sow/v1,,
+wpbooklist/v1,Used to sell books, record and catalog a library,https://wordpress.org/plugins/wpbooklist/
+tabulate,This plugin provides a simple user-friendly interface to tables in the database,https://wordpress.org/plugins/tabulate/
+geoblog/v1,,
+acf/v2,,
+mobilegate/v2,,
+jamtrap/v1,,
+paf,,
+in-cron/v1,,
+awb/v1,AWB allows to use parallax backgrounds with images, videos, youtube and vimeo,https://wordpress.org/plugins/advanced-backgrounds/
+wctofb/v1,WooCommerce to facebook shop,https://wordpress.org/plugins/woo-to-facebook-shop/
+weekly-class/v1,Generate a weekly schedule of classes,https://wordpress.org/plugins/weekly-class-schedule/
+be-to-tatsu/v1,,
+braintree-gateway/v1/,A payment gateway,
+bfwc/settings/kount/,,
+gembloong/,,
