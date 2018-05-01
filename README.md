@@ -43,6 +43,8 @@ in these ones :
 * -c, --categories: list all categories
 * -m, --media: list all public media objects
 * -g, --pages: list all public pages
+* -r, --crawl-ns: crawl plugin namespaces for collections. Set it to all to
+crawl all namespaces
 * --proxy PROXY_URL force the data to pass through a specified proxy server
 * --auth CREDENTIALS use the specified credentials as basic HTTP auth for the
 server
@@ -58,6 +60,9 @@ files:
 You can set the proxy server with the --proxy flag. It can be an HTTP or HTTPS
 as described in Python requests documentation. By default the proxy servers of
 the system are used.
+
+Using the -r option, you can crawl collections of the specified namespace. This
+allows you to get a set of objects from the API and maybe confidential data ;)
 
 Example:
 

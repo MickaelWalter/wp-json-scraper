@@ -280,3 +280,63 @@ class InfoDisplayer:
                 line += " - " + page['link']
             print(line)
         print()
+
+    @staticmethod
+    def recurse_list_or_dict(data, tab):
+        """
+        Helper function to generate recursive display of API data
+        """
+        if type(data) is not dict and type(data) is not list:
+            return tab + str(data)
+
+        line = ""
+        if type(data) is list:
+            i = 0
+            length = len(data)
+            for value in data:
+                do_jmp = True
+                if type(value) is dict or type(value) is list:
+                    line += InfoDisplayer.recurse_list_or_dict(value, tab+"\t")
+                elif type(value) is str:
+                    if "\n" in value:
+                        line += "\n" + tab + "\t"
+                        line += value.replace("\n", "\n"+tab+"\t")
+                    else:
+                        line += " "
+                        line += value.replace("\n", "\n"+tab)
+                        do_jmp = False
+                else:
+                    line += " " + str(value)
+                if i < length and do_jmp:
+                    line += "\n"
+                i += 1
+        else:
+            for key,value in data.items():
+                line += "\n" + tab + key
+                if type(value) is dict or type(value) is list:
+                    line += InfoDisplayer.recurse_list_or_dict(value, tab+"\t")
+                elif type(value) is str:
+                    if "\n" in value:
+                        line += "\n" + tab + "\t"
+                        line += value.replace("\n", "\n"+tab+"\t")
+                    else:
+                        line += " "
+                        line += value.replace("\n", "\n"+tab)
+                else:
+                    line += " " + str(value)
+        return line
+
+    @staticmethod
+    def display_crawled_ns(information):
+        """
+        Displays endpoints details published on the WordPress instance
+        param information: information as a JSON object
+        """
+        print()
+        for url,data in information.items():
+            line = "\n"
+            line += url
+            tab = "\t"
+            line += InfoDisplayer.recurse_list_or_dict(data, tab)
+            print(line)
+        print()

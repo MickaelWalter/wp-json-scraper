@@ -22,7 +22,8 @@ SOFTWARE.
 
 import requests
 
-from lib.exceptions import NoWordpressApi, WordPressApiNotV2
+from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
+                            NSNotFoundException
 from lib.requestsession import RequestSession, HTTPError400
 
 class WPApi:
@@ -189,3 +190,60 @@ class WPApi:
 
         self.pages = self.crawl_pages('wp/v2/pages?page=%d')
         return self.pages
+
+    def get_namespaces(self):
+        """
+        Retrieves an array of namespaces
+        """
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if 'namespaces' in self.basic_info.keys():
+            return self.basic_info['namespaces']
+        return []
+
+    def get_routes(self):
+        """
+        Retrieves an array of namespaces
+        """
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if 'routes' in self.basic_info.keys():
+            return self.basic_info['routes']
+        return []
+
+    def crawl_namespaces(self, ns):
+        """
+        Crawls all accessible get routes defined for the specified namespace.
+        """
+        namespaces = self.get_namespaces()
+        routes = self.get_routes()
+        ns_data = {}
+        if ns != "all" and ns not in namespaces:
+            raise NSNotFoundException
+        for url, route in routes.items():
+            if 'namespace' not in route.keys() \
+               or 'endpoints' not in route.keys():
+                continue
+            url_as_ns = url.lstrip('/')
+            if '(?P<' in url or url_as_ns in namespaces:
+                continue
+            if ns != 'all' and route['namespace'] != ns or \
+               route['namespace'] in ['wp/v2', '']:
+                continue
+            for endpoint in route['endpoints']:
+                if 'GET' not in endpoint['methods']:
+                    continue
+                keep = True
+                if len(endpoint['args']) > 0 and type(endpoint['args']) is dict:
+                    for name,arg in endpoint['args'].items():
+                        if arg['required']:
+                            keep = False
+                if keep:
+                    try:
+                        ns_request = self.s.get(self.url + self.api_path
+                                        + url)
+                        ns_data[url] = ns_request.json()
+                    except Exception:
+                        continue
+                    continue
+        return ns_data

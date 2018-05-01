@@ -29,7 +29,8 @@ import re
 from lib.console import Console
 from lib.wpapi import WPApi
 from lib.infodisplayer import InfoDisplayer
-from lib.exceptions import NoWordpressApi, WordPressApiNotV2
+from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
+                            NSNotFoundException
 from lib.exporter import Exporter
 from lib.requestsession import RequestSession
 
@@ -103,6 +104,12 @@ license, check LICENSE.txt for more information""")
                         dest='page_export_folder',
                         action='store',
                         help='export pages to a specified destination folder')
+    parser.add_argument('-r',
+                        '--crawl-ns',
+                        dest='crawl_ns',
+                        action='store',
+                        help='crawl all GET routes of the specified namespace '
+                        'or all namespaces if all is specified')
     parser.add_argument('-a',
                         '--all',
                         dest='all',
@@ -255,6 +262,22 @@ license, check LICENSE.txt for more information""")
             InfoDisplayer.display_media(media_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
+
+    if args.crawl_ns is None and args.all:
+        args.crawl_ns = "all"
+
+    if args.crawl_ns is not None:
+        try:
+            if args.crawl_ns == "all":
+                Console.log_info("Crawling all namespaces")
+            else:
+                Console.log_info("Crawling %s namespace" % args.crawl_ns)
+            ns_data = scanner.crawl_namespaces(args.crawl_ns)
+            InfoDisplayer.display_crawled_ns(ns_data)
+        except NSNotFoundException:
+            Console.log_error("The specified namespace was not found")
+        except Exception as e:
+            print(e)
 
     if args.post_export_folder is not None:
         try:
