@@ -51,7 +51,7 @@ class InfoDisplayer:
 
         if 'gmt_offset' in information.keys():
             timezone_string = ""
-            gmt_offset = information['gmt_offset']
+            gmt_offset = str(information['gmt_offset'])
             if '-' not in gmt_offset:
                 gmt_offset = '+' + gmt_offset
             if 'timezone_string' in information.keys():

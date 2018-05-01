@@ -22,9 +22,12 @@ SOFTWARE.
 
 import requests
 
+from simplejson.errors import JSONDecodeError
+
 from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
                             NSNotFoundException
 from lib.requestsession import RequestSession, HTTPError400
+from lib.utils import url_path_join
 
 class WPApi:
     """
@@ -61,11 +64,12 @@ class WPApi:
         """
         Collects and stores basic information about the target
         """
+        rest_url = url_path_join(self.url, self.api_path)
         if self.basic_info is not None:
             return self.basic_info
 
         try:
-            req = self.s.get(self.url + self.api_path)
+            req = self.s.get(rest_url)
         except Exception:
             raise NoWordpressApi
         if req.status_code >= 400:
@@ -93,16 +97,21 @@ class WPApi:
         more_entries = True
         entries = []
         while more_entries:
+            rest_url = url_path_join(self.url, self.api_path, (url % page))
             try:
-                req = self.s.get(self.url + self.api_path + (url % page))
+                req = self.s.get(rest_url)
             except HTTPError400:
                 break
             except Exception:
                 raise WordPressApiNotV2
-            if type(req.json()) is list and len(req.json()) > 0:
-                entries += req.json()
-            else:
+            try:
+                if type(req.json()) is list and len(req.json()) > 0:
+                    entries += req.json()
+                else:
+                    more_entries = False
+            except JSONDecodeError:
                 more_entries = False
+
             page += 1
 
         return entries
@@ -239,11 +248,10 @@ class WPApi:
                         if arg['required']:
                             keep = False
                 if keep:
+                    rest_url = url_path_join(self.url, self.api_path, url)
                     try:
-                        ns_request = self.s.get(self.url + self.api_path
-                                        + url)
+                        ns_request = self.s.get(rest_url)
                         ns_data[url] = ns_request.json()
                     except Exception:
                         continue
-                    continue
         return ns_data
