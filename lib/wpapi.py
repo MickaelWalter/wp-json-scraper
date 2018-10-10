@@ -22,7 +22,7 @@ SOFTWARE.
 
 import requests
 
-from simplejson.errors import JSONDecodeError
+from json.decoder import JSONDecodeError
 
 from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
                             NSNotFoundException
