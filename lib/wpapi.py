@@ -27,7 +27,7 @@ from json.decoder import JSONDecodeError
 from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
                             NSNotFoundException
 from lib.requestsession import RequestSession, HTTPError400
-from lib.utils import url_path_join
+from lib.utils import url_path_join, print_progress_bar
 
 class WPApi:
     """
@@ -94,12 +94,18 @@ class WPApi:
         endpoint
         """
         page = 1
+        total_entries = 0
+        total_pages = 0
         more_entries = True
         entries = []
         while more_entries:
             rest_url = url_path_join(self.url, self.api_path, (url % page))
             try:
                 req = self.s.get(rest_url)
+                if page == 1 and 'X-WP-Total' in req.headers:
+                    total_entries = int(req.headers['X-WP-Total'])
+                    total_pages = int(req.headers['X-WP-TotalPages'])
+                    print("Number of entries: %d" % total_entries)
             except HTTPError400:
                 break
             except Exception:
@@ -107,6 +113,9 @@ class WPApi:
             try:
                 if type(req.json()) is list and len(req.json()) > 0:
                     entries += req.json()
+                    if total_entries > 0:
+                        print_progress_bar(page, total_pages,
+                        length=70)
                 else:
                     more_entries = False
             except JSONDecodeError:

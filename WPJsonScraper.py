@@ -207,8 +207,8 @@ license, check LICENSE.txt for more information""")
 
     if args.posts or args.all:
         try:
-            posts_list = scanner.get_all_posts()
             Console.log_info("Post list")
+            posts_list = scanner.get_all_posts()
             InfoDisplayer.display_posts(posts_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -223,16 +223,16 @@ license, check LICENSE.txt for more information""")
 
     if args.users or args.all:
         try:
-            users_list = scanner.get_all_users()
             Console.log_info("User list")
+            users_list = scanner.get_all_users()
             InfoDisplayer.display_users(users_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
     if args.endpoints or args.all:
         try:
-            basic_info = scanner.get_basic_info()
             Console.log_info("API endpoints")
+            basic_info = scanner.get_basic_info()
             InfoDisplayer.display_endpoints(basic_info)
         except NoWordpressApi:
             Console.log_error("No WordPress API available at the given URL "
@@ -241,16 +241,16 @@ license, check LICENSE.txt for more information""")
 
     if args.categories or args.all:
         try:
-            categories_list = scanner.get_all_categories()
             Console.log_info("Category list")
+            categories_list = scanner.get_all_categories()
             InfoDisplayer.display_categories(categories_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
     if args.tags or args.all:
         try:
-            tags_list = scanner.get_all_tags()
             Console.log_info("Tags list")
+            tags_list = scanner.get_all_tags()
             InfoDisplayer.display_tags(tags_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
