@@ -43,6 +43,7 @@ in these ones :
 * -c, --categories: list all categories
 * -m, --media: list all public media objects
 * -g, --pages: list all public pages
+* -S, --search SEARCH_TERMS: performs a search on SEARCH_TERMS
 * -r, --crawl-ns: crawl plugin namespaces for collections. Set it to all to
 crawl all namespaces
 * --proxy PROXY_URL force the data to pass through a specified proxy server
@@ -61,20 +62,38 @@ You can set the proxy server with the --proxy flag. It can be an HTTP or HTTPS
 as described in Python requests documentation. By default the proxy servers of
 the system are used.
 
-Using the -r option, you can crawl collections of the specified namespace. This
-allows you to get a set of objects from the API and maybe confidential data ;)
-
 Example:
 
     http://user:password@example.com:8080/
+
+Using the -r option, you can crawl collections of the specified namespace. This
+allows you to get a set of objects from the API and maybe confidential data ;)
+
+## Search feature
+
+WordPress WP-JSON API allows to search in posts, pages, media objects, tags, 
+categories, comments and users.
+
+The -S (--search) option allows to use this functionnality with 
+wp-json-scraper.
+
+It can be used on a specific item type or on several at once.
+
+Examples:
+
+    # Search for "lorem" for all item types specified
+    ./WPJsonScraper.py -S lorem https://demo.wp-api.org/
+    # Search for "hello world" in posts, users and pages only
+    ./WPJsonScraper.py -S "hello world" -p -u -g https://demo.wp-api.org/
 
 ## Features to implement
 
 WPJsonScraper is not a mature project yet and its features are pretty basic for
 the moment. Some of the features that could be implemented in the future are:
 
-* Progress display while retrieving information
 * Comments dumping
+* Posts revisions retrieval
 * Plugins support
-* Specific retrievals by id or search options
+* Specific retrievals by id
 * Authentication support with NTLM
+* Write tests duh!
