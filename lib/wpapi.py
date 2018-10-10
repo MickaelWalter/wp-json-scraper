@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 import requests
+from urllib.parse import urlencode
 
 from json.decoder import JSONDecodeError
 
@@ -34,14 +35,17 @@ class WPApi:
     Queries the WordPress API to retrieve information
     """
 
-    def __init__(self, target, api_path="wp-json/", session=None):
+    def __init__(self, target, api_path="wp-json/", session=None,
+                 search_terms=None):
         """
         Creates a new instance of WPApi
         param target: the target of the scan
         param api_path: the api path, if non-default
         param session: the requests session object to use for HTTP requests
+        param search_terms : the terms of the keyword search, if any
         """
         self.api_path = api_path
+        self.search_terms = search_terms
         self.has_v2 = None
         self.name = None
         self.description = None
@@ -98,8 +102,14 @@ class WPApi:
         total_pages = 0
         more_entries = True
         entries = []
+        base_url = url
+        if self.search_terms is not None:
+            if '?' in base_url:
+                base_url += '&' + urlencode({'search': self.search_terms})
+            else:
+                base_url += '?' + urlencode({'search': self.search_terms})
         while more_entries:
-            rest_url = url_path_join(self.url, self.api_path, (url % page))
+            rest_url = url_path_join(self.url, self.api_path, (base_url % page))
             try:
                 req = self.s.get(rest_url)
                 if page == 1 and 'X-WP-Total' in req.headers:

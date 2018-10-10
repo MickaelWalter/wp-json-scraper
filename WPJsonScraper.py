@@ -116,6 +116,13 @@ license, check LICENSE.txt for more information""")
                         action='store_true',
                         help='dumps all available information from the '
                         'target API')
+    parser.add_argument('-S',
+                        '--search',
+                        dest='search',
+                        action='store',
+                        help='search for a string on the WordPress instance. '
+                        'If one or several flag in agpmctu are set, search '
+                        'only on these')
     parser.add_argument('--proxy',
                         dest='proxy_server',
                         action='store',
@@ -193,8 +200,20 @@ license, check LICENSE.txt for more information""")
         Console.log_success("Connection OK")
     except Exception as e:
         exit(0)
+    
+    # Quite an ugly check to launch a search on all parameters edible 
+    # Should find something better (maybe in argparser doc?)
+    if args.search is not None and not (args.all | args.posts | args.pages | 
+        args.users | args.categories | args.tags | args.media):
+        Console.log_info("Searching on all available sources")
+        args.posts = True
+        args.pages = True 
+        args.users = True
+        args.categories = True
+        args.tags = True
+        args.media = True
 
-    scanner = WPApi(target, session=session)
+    scanner = WPApi(target, session=session, search_terms=args.search)
     if args.info or args.all:
         try:
             basic_info = scanner.get_basic_info()
