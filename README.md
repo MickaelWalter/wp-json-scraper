@@ -58,6 +58,7 @@ files:
 
 * --export-pages PAGE_EXPORT_FOLDER
 * --export-posts POST_EXPORT_FOLDER
+* --export-comments COMMENT_EXPORT_FOLDER
 
 You can set the proxy server with the --proxy flag. It can be an HTTP or HTTPS
 as described in Python requests documentation. By default the proxy servers of
@@ -92,9 +93,11 @@ Examples:
 WPJsonScraper is not a mature project yet and its features are pretty basic for
 the moment. Some of the features that could be implemented in the future are:
 
-* Comments dumping
 * Posts revisions retrieval
 * Plugins support
 * Specific retrievals by id
 * Authentication support with NTLM
+* WordPress instance save as JSON (limited to the accessible scope) and restore?
+* Password-protected content handling
+* Support new endpoints added in version 5.0: autosaves, search, block type, blocks, block_renderer, themes (authenticated access required but WTF?)
 * Write tests duh!
