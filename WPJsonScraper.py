@@ -196,7 +196,6 @@ license, check LICENSE.txt for more information""")
     session = RequestSession(proxy=proxy, cookies=cookies,
       authorization=authorization)
     try:
-        connectivity_check = session.get(target)
         Console.log_success("Connection OK")
     except Exception as e:
         exit(0)
