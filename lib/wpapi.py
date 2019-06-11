@@ -58,11 +58,19 @@ class WPApi:
         self.media = None
         self.pages = None
         self.s = None
+        self.comments_loaded = False
+        self.orphan_comments = []
 
         if session is not None:
             self.s = session
         else:
             self.s = RequestSession()
+
+    def get_orphans_comments(self):
+        """
+        Returns the list of comments for which a post hasn't been found
+        """
+        return self.orphan_comments
 
     def get_basic_info(self):
         """
@@ -135,7 +143,7 @@ class WPApi:
 
         return entries
 
-    def get_all_posts(self):
+    def get_all_posts(self, comments=False):
         """
         Retrieves all posts
         """
@@ -143,10 +151,26 @@ class WPApi:
             self.get_basic_info()
         if not self.has_v2:
             raise WordPressApiNotV2
-        if self.posts is not None:
+        if self.posts is not None and (self.comments_loaded and comments or not comments):
             return self.posts
-
-        self.posts = self.crawl_pages('wp/v2/posts?page=%d')
+        elif self.posts is None:
+            self.posts = self.crawl_pages('wp/v2/posts?page=%d')
+        if not self.comments_loaded and comments:
+            # Load comments
+            comment_list = self.crawl_pages('wp/v2/comments?page=%d')
+            for comment in comment_list:
+                found_post = False
+                for i in range(0, len(self.posts)):
+                    if self.posts[i]['id'] == comment['post']:
+                        if "comments" not in self.posts[i]:
+                            self.posts[i]['comments'] = []
+                        self.posts[i]["comments"].append(comment)
+                        found_post = True
+                        break
+                if not found_post:
+                    self.orphan_comments.append(comment)
+            self.comments_loaded = True
+        
         return self.posts
 
     def get_all_tags(self):
