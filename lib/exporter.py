@@ -212,3 +212,77 @@ class Exporter:
             exported_posts += 1
 
         return exported_posts
+
+    @staticmethod
+    def export_comments(posts, orphan_comments, export_folder):
+        """
+        Exports comments from posts and from orphans list
+        """
+        exported_comments = 0
+        for post in posts:
+            if 'comments' in post.keys() and len(post['comments']) > 0:
+                for comment in post['comments']:
+                    if 'slug' in post.keys() and len(post['slug']) > 0:
+                        Exporter.export_comments_helper(comment, post['slug'], export_folder)
+                    else:
+                        Exporter.export_comments_helper(comment, post['id'], export_folder)
+                    exported_comments += 1
+        for comment in orphan_comments:
+            Exporter.export_comments_helper(comment, '__orphan_comments', export_folder)
+            exported_comments += 1
+        return exported_comments
+
+    @staticmethod 
+    def export_comments_helper(comment, post, export_folder):
+        date_format = "%Y-%m-%dT%H:%M:%S-%Z"
+        if not os.path.isdir(export_folder):
+            os.mkdir(export_folder)
+        if not os.path.isdir(os.path.join(export_folder, post)):
+            os.mkdir(os.path.join(export_folder, post))
+        out_file = open(os.path.join(export_folder, post, "%04d.html" % comment['id']), "wt")
+        date_gmt = "Unknown"
+        if 'date_gmt' in comment.keys():
+            date_gmt = datetime.strptime(comment['date_gmt'] +
+                                            "-GMT", date_format)
+        post_link = "None"
+        if '_links' in comment.keys() and 'up' in comment['_links'].keys() and len(comment['_links'].keys()) > 0 and 'href' in comment['_links']['up'][0].keys():
+            post_link = html.escape(comment['_links']['up'][0]['href'])
+        buffer = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{author}</title>
+    </head>
+    <body>
+        <div>
+            <h1>Metadata</h1>
+            <ul>
+                <li><strong>Date (GMT):</strong> {date_gmt}</li>
+                <li><strong>Status:</strong> {status}</li>
+                <li><strong>Link:</strong> <a href=\"{link}\">{link}</a></li>
+                <li><strong>Author:</strong> {author}</li>
+                <li><strong>Author URL:</strong> {author_url}</li>
+                <li><strong>Post ID:</strong> {post_id}</li>
+                <li><strong>Post link:</strong> <a href\"={post_link}\">{post_link}</a></li>
+            </ul>
+        </div>
+        <div>
+            <h1>{author} on {post_title}</h1>
+            {content}
+        </div>
+    </body>
+</html>
+        """
+        buffer = buffer.format(
+            author=html.escape(comment["author_name"]),
+            author_url=html.escape(comment['author_url']),
+            date_gmt=date_gmt.strftime("%d/%m/%Y %H:%M:%S"),
+            status=html.escape(comment['status']),
+            link=html.escape(comment['link']),
+            content=html.escape(comment['content']['rendered']),
+            post_title=html.escape(post),
+            post_id=int(comment['post']),
+            post_link=post_link
+        )
+        out_file.write(buffer)
+        out_file.close()

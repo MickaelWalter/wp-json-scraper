@@ -109,6 +109,10 @@ license, check LICENSE.txt for more information""")
                         dest='page_export_folder',
                         action='store',
                         help='export pages to a specified destination folder')
+    parser.add_argument('--export-comments',
+                        dest='comment_export_folder',
+                        action='store',
+                        help='export comments to a specified destination folder')
     parser.add_argument('-r',
                         '--crawl-ns',
                         dest='crawl_ns',
@@ -336,6 +340,18 @@ license, check LICENSE.txt for more information""")
             if page_number> 0:
                 Console.log_success("Exported %d pages to %s" %
                 (page_number, args.page_export_folder))
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+    
+    if args.comment_export_folder is not None:
+        try:
+            post_list = scanner.get_all_posts(True)
+            orphan_list = scanner.get_orphans_comments()
+            print()
+            page_number = Exporter.export_comments(post_list, orphan_list, args.comment_export_folder)
+            if page_number > 0:
+                Console.log_success("Exported %d comments to %s" %
+                (page_number, args.comment_export_folder))
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
