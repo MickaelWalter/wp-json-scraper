@@ -34,7 +34,7 @@ from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
 from lib.exporter import Exporter
 from lib.requestsession import RequestSession
 
-version = '0.4'
+version = '0.4.1'
 
 def main():
     parser = argparse.ArgumentParser(description=
