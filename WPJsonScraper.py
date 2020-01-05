@@ -100,6 +100,11 @@ license, check LICENSE.txt for more information""")
                         dest='pages',
                         action='store_true',
                         help='lists pages')
+    parser.add_argument('-o',
+                        '--comments',
+                        dest='comments',
+                        action='store_true',
+                        help="lists comments")
     parser.add_argument('--export-pages',
                         dest='page_export_folder',
                         action='store',
@@ -222,12 +227,15 @@ license, check LICENSE.txt for more information""")
             Console.log_error("No WordPress API available at the given URL "
             "(too old WordPress or not WordPress?)")
             exit()
-
+    
     if args.posts or args.all:
         try:
-            Console.log_info("Post list")
-            posts_list = scanner.get_all_posts()
-            InfoDisplayer.display_posts(posts_list)
+            if args.comments:
+                Console.log_info("Post list with comments")
+            else:
+                Console.log_info("Post list")
+            posts_list = scanner.get_all_posts(args.comments)
+            InfoDisplayer.display_posts(posts_list, scanner.get_orphans_comments())
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 

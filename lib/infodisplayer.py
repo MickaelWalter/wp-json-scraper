@@ -141,7 +141,7 @@ class InfoDisplayer:
             print()
 
     @staticmethod
-    def display_posts(information):
+    def display_posts(information, orphan_comments=[]):
         """
         Displays posts published on the WordPress instance
         param information: information as a JSON object
@@ -161,6 +161,9 @@ class InfoDisplayer:
                         date_gmt.strftime("%d/%m/%Y at %H:%M:%S")
             if 'link' in post.keys():
                 line += " - " + post['link']
+            if 'comments' in post.keys():
+                for comment in post['comments']:
+                    line += "\n\t * Comment by %s from (%s) - %s" % (comment['author_name'], comment['author_url'], comment['link'])
             print(line)
         print()
 

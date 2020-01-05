@@ -43,6 +43,7 @@ in these ones :
 * -c, --categories: list all categories
 * -m, --media: list all public media objects
 * -g, --pages: list all public pages
+* -o, --comments: lists comments
 * -S, --search SEARCH_TERMS: performs a search on SEARCH_TERMS
 * -r, --crawl-ns: crawl plugin namespaces for collections. Set it to all to
 crawl all namespaces
