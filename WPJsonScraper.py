@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 
 """
-<<<<<<< HEAD
-Copyright (c) 2018-2019 Mickaël "Kilawyn" Walter
-||||||| merged common ancestors
-Copyright (c) 2018 Mickaël "Kilawyn" Walter
-=======
 Copyright (c) 2018-2020 Mickaël "Kilawyn" Walter
->>>>>>> develop
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
