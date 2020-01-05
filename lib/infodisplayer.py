@@ -165,6 +165,13 @@ class InfoDisplayer:
                 for comment in post['comments']:
                     line += "\n\t * Comment by %s from (%s) - %s" % (comment['author_name'], comment['author_url'], comment['link'])
             print(line)
+        
+        if len(orphan_comments) > 0:
+            # TODO: Untested code, may never be executed, I don't know how the REST API and WordPress handle post/comment link in back-end
+            print()
+            print("Found orphan comments! Check them right below:")
+            for comment in post['comments']:
+                line += "\n\t * Comment by %s from (%s) on post ID %d - %s" % (comment['author_name'], comment['author_url'], comment['post'], comment['link'])
         print()
 
     @staticmethod
