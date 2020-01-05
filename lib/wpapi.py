@@ -28,7 +28,7 @@ from json.decoder import JSONDecodeError
 from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
                             NSNotFoundException
 from lib.requestsession import RequestSession, HTTPError400
-from lib.utils import url_path_join, print_progress_bar
+from lib.utils import url_path_join, print_progress_bar, get_content_as_json
 
 class WPApi:
     """
@@ -86,7 +86,7 @@ class WPApi:
             raise NoWordpressApi
         if req.status_code >= 400:
             raise NoWordpressApi
-        self.basic_info = req.json()
+        self.basic_info = get_content_as_json(req)
 
         if 'name' in self.basic_info.keys():
             self.name = self.basic_info['name']
@@ -129,8 +129,9 @@ class WPApi:
             except Exception:
                 raise WordPressApiNotV2
             try:
-                if type(req.json()) is list and len(req.json()) > 0:
-                    entries += req.json()
+                json_content = get_content_as_json(req)
+                if type(json_content) is list and len(json_content) > 0:
+                    entries += json_content
                     if total_entries > 0:
                         print_progress_bar(page, total_pages,
                         length=70)
@@ -294,7 +295,7 @@ class WPApi:
                     rest_url = url_path_join(self.url, self.api_path, url)
                     try:
                         ns_request = self.s.get(rest_url)
-                        ns_data[url] = ns_request.json()
+                        ns_data[url] = get_content_as_json(ns_request)
                     except Exception:
                         continue
         return ns_data
