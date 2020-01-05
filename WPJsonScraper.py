@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Copyright (c) 2018-2019 Mickaël "Kilawyn" Walter
+Copyright (c) 2018-2020 Mickaël "Kilawyn" Walter
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ confidential (but not well-protected) data, it is recommended that you get
 first a written permission from the site owner. The author won\'t endorse any
 liability for misuse of this software""",
     epilog=
-"""(c) 2018-2019 Mickaël "Kilawyn" Walter. This program is licensed under the MIT
+"""(c) 2018-2020 Mickaël "Kilawyn" Walter. This program is licensed under the MIT
 license, check LICENSE.txt for more information""")
     parser.add_argument('-v',
                         '--version',
