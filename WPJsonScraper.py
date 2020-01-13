@@ -33,6 +33,7 @@ from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
                             NSNotFoundException
 from lib.exporter import Exporter
 from lib.requestsession import RequestSession
+from lib.interactive import start_interactive
 
 version = '0.4.1'
 
@@ -151,6 +152,10 @@ license, check LICENSE.txt for more information""")
                         dest='nocolor',
                         action='store_true',
                         help='remove color in the output (e.g. to pipe it)')
+    parser.add_argument('--interactive',
+                        dest='interactive',
+                        action='store_true',
+                        help='start an interactive session')
 
 
     args = parser.parse_args()
@@ -220,6 +225,10 @@ license, check LICENSE.txt for more information""")
         args.categories = True
         args.tags = True
         args.media = True
+
+    if args.interactive:
+        start_interactive(args.target, session, proxy, cookies, authorization, version)
+        return
 
     scanner = WPApi(target, session=session, search_terms=args.search)
     if args.info or args.all:
