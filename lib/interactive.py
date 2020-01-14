@@ -3,12 +3,14 @@ import argparse
 import shlex
 import sys
 
+from lib.wpapi import WPApi
+
 class ArgumentParser(argparse.ArgumentParser):
     """
     Wrapper for argparse.ArgumentParser (especially the help function that quits the application after display)
     """
-    def __init__(self, prog=""):
-        argparse.ArgumentParser.__init__(self, prog=prog, add_help=False)
+    def __init__(self, prog="", description=""):
+        argparse.ArgumentParser.__init__(self, prog=prog, add_help=False, description=description)
         self.add_argument("--help", "-h", help="print this help", action="store_true")
         self.should_help = True
 
@@ -17,6 +19,7 @@ class ArgumentParser(argparse.ArgumentParser):
         if args.help:
             if self.should_help:
                 self.print_help(sys.stdout)
+                print()
             self.should_help = False
             return None
         if self.should_help:
@@ -27,6 +30,7 @@ class ArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         if self.should_help:
             self.print_help(sys.stdout)
+            print()
             self.should_help = False
 
 class InteractiveShell(cmd.Cmd):
@@ -40,14 +44,12 @@ class InteractiveShell(cmd.Cmd):
     """
     prompt = "> "
 
-    def __init__(self, target, session, proxy, cookies, authorization, version):
+    def __init__(self, target, session, version):
         cmd.Cmd.__init__(self)
         self.target = target
         self.session = session
         self.version = version
-        self.proxy = proxy
-        self.cookies = cookies
-        self.authorization = authorization
+        self.scanner = WPApi(self.target, session=session)
 
     def do_exit(self, arg):
         'Exit wp-json-scraper'
@@ -55,7 +57,7 @@ class InteractiveShell(cmd.Cmd):
     
     def do_show(self, arg):
         'Shows information about parameters in memory'
-        parser = ArgumentParser(prog='show')
+        parser = ArgumentParser(prog='show', description='show information about global parameters')
         parser.add_argument("what", choices=['all', 'target', 'proxy', 'cookies', 'credentials', 'version'],
         help='choose the information to be displayed', default='all')
         args = parser.custom_parse_args(arg)
@@ -64,27 +66,110 @@ class InteractiveShell(cmd.Cmd):
         if args.what == 'all' or args.what == 'target':
             print("Target: %s" % self.target)
         if args.what == 'all' or args.what == 'proxy':
-            if self.proxy is not None:
-                print("Proxy: %s" % self.proxy)
+            proxies = self.session.get_proxies()
+            if proxies is not None and len(proxies) > 0:
+                print ("Proxies:")
+                for key, value in proxies.items():
+                    print("\t%s: %s" % (key, value))
             else:
                 print ("Proxy: none")
         if args.what == 'all' or args.what == 'cookies':
-            if self.cookies is not None:
-                print("Cookies: %s" % self.cookies)
+            cookies = self.session.get_cookies()
+            if len(cookies) > 0:
+                print("Cookies:")
+                for key, value in cookies.items():
+                    print("\t%s: %s" % (key, value))
             else:
                 print("Cookies: none")
         if args.what == 'all' or args.what == 'credentials':
-            if self.authorization is not None:
-                print("Credentials: %s" % "")
+            credentials = self.session.get_creds()
+            if credentials is not None:
+                creds_str = "Credentials: "
+                for el in credentials:
+                    creds_str += el + ":"
+                print(creds_str[:-1])
             else:
                 print("Credentials: none")
         if args.what == 'all' or args.what == 'version':
             print("WPJsonScraper version: %s" % self.version)
         print()
-        
+    
+    def do_set(self, arg):
+        'Sets a global parameter of WPJsonScanner'
+        parser = ArgumentParser(prog='set', description='sets global parameters for WPJsonScanner')
+        parser.add_argument("what", choices=['target', 'proxy', 'cookies', 'credentials'],
+        help='the parameter to set')
+        parser.add_argument("value", type=str, help='the new value of the parameter (for cookies, set as cookie string: "n1=v1; n2=v2")')
+        args = parser.custom_parse_args(arg)
+        if args is None:
+            return
+        if args.what == 'target':
+            self.target = args.value
+            print("target = %s" % args.value)
+        elif args.what == 'proxy':
+            self.session.set_proxy(args.value)
+        elif args.what == 'cookies':
+            self.session.set_cookies(args.value)
+        elif args.what == "credentials":
+            authorization_list = args.value.split(':')
+            if len(authorization_list) == 1:
+                authorization = (authorization_list[0], '')
+            elif len(authorization_list) >= 2:
+                authorization = (authorization_list[0],
+                ':'.join(authorization_list[1:]))
+            self.session.set_creds(authorization)
 
-def start_interactive(target, session, proxy, cookies, authorization, version):
+    def do_list(self, arg):
+        'Gets the list of something from the server'
+        parser = ArgumentParser(prog='list', description='gets a list of something from the server')
+        parser.add_argument("what", choices=[
+            'posts', 
+            #'post-revisions', 
+            #'wp-blocks', 
+            'categories',
+            'tags',
+            'pages',
+            'comments',
+            'media',
+            'users',
+            #'themes',
+            #'search-results',
+            'all',
+            ],
+            help='what to list')
+        parser.add_argument("--json", "-j", help="list and store as json to the specified file")
+        parser.add_argument("--csv", "-c", help="list and store as csv to the specified file")
+        parser.add_argument("--limit", "-l", type=int, help="limit the number of results")
+        parser.add_argument("--start", "-s", type=int, help="start at the given index")
+        parser.add_argument("--no-cache", dest="cache", action="store_false", help="don't lookup in cache and ask the server")
+        args = parser.custom_parse_args(arg)
+        if args is None:
+            return
+        if args.what == "all" or args.what == "posts":
+            print("Posts list") # TODO
+            print()
+        if args.what == "all" or args.what == "categories":
+            print("Categories list") # TODO
+            print()
+        if args.what == "all" or args.what == "tags":
+            print("Tags list") # TODO
+            print()
+        if args.what == "all" or args.what == "pages":
+            print("Pages list") # TODO
+            print()
+        if args.what == "all" or args.what == "comments":
+            print("Comments list") # TODO
+            print()
+        if args.what == "all" or args.what == "media":
+            print("Media list") # TODO
+            print()
+        if args.what == "all" or args.what == "users":
+            print("Users list") # TODO
+            print()
+
+
+def start_interactive(target, session, version):
     """
     Starts a new interactive session
     """
-    InteractiveShell(target, session, proxy, cookies, authorization, version).cmdloop()
+    InteractiveShell(target, session, version).cmdloop()

@@ -227,7 +227,7 @@ license, check LICENSE.txt for more information""")
         args.media = True
 
     if args.interactive:
-        start_interactive(args.target, session, proxy, cookies, authorization, version)
+        start_interactive(args.target, session, version)
         return
 
     scanner = WPApi(target, session=session, search_terms=args.search)
