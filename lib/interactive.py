@@ -4,6 +4,8 @@ import shlex
 import sys
 
 from lib.wpapi import WPApi
+from lib.requestsession import RequestSession
+from lib.console import Console
 
 class ArgumentParser(argparse.ArgumentParser):
     """
@@ -47,6 +49,7 @@ class InteractiveShell(cmd.Cmd):
     def __init__(self, target, session, version):
         cmd.Cmd.__init__(self)
         self.target = target
+        InteractiveShell.prompt = Console.red + target + Console.normal + " > "
         self.session = session
         self.version = version
         self.scanner = WPApi(self.target, session=session)
@@ -105,11 +108,16 @@ class InteractiveShell(cmd.Cmd):
             return
         if args.what == 'target':
             self.target = args.value
+            InteractiveShell.prompt = Console.red + self.target + Console.normal + " > "
             print("target = %s" % args.value)
+            self.scanner = WPApi(self.target, session=self.session)
+            Console.log_info("Cache is erased but session stays the same (with cookies and authorization)")
         elif args.what == 'proxy':
             self.session.set_proxy(args.value)
+            print("proxy = %s" % args.value)
         elif args.what == 'cookies':
             self.session.set_cookies(args.value)
+            print("Cookies set!")
         elif args.what == "credentials":
             authorization_list = args.value.split(':')
             if len(authorization_list) == 1:
@@ -118,6 +126,8 @@ class InteractiveShell(cmd.Cmd):
                 authorization = (authorization_list[0],
                 ':'.join(authorization_list[1:]))
             self.session.set_creds(authorization)
+            print("Credentials set!")
+        print()
 
     def do_list(self, arg):
         'Gets the list of something from the server'

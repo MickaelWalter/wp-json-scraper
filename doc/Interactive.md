@@ -42,6 +42,10 @@ Sets a specific global parameter.
 Note that in cases of proxy and cookies, the command updates the entries. 
 Check the resulting parameter with show if you don't know what that means.
 
+*Note:* changing the target resets the cache but keeps proxies, cookies and authorization headers. Be aware 
+of data leakage risks. If you need to keep things apart between targets, relaunch WPJsonScraper or make sure 
+all is correctly set up with the `show all` command.
+
 Example 1: change the target
 
     set target http://example.com
