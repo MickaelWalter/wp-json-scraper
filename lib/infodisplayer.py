@@ -149,22 +149,23 @@ class InfoDisplayer:
         print()
         date_format = "%Y-%m-%dT%H:%M:%S-%Z"
         for post in information:
-            line = ""
-            if 'id' in post.keys():
-                line += "ID: %d" %post['id']
-            if 'title' in post.keys():
-                line += " - " + html.unescape(post['title']['rendered'])
-            if 'date_gmt' in post.keys():
-                date_gmt = datetime.strptime(post['date_gmt'] +
-                                             "-GMT", date_format)
-                line += " on %s" % \
-                        date_gmt.strftime("%d/%m/%Y at %H:%M:%S")
-            if 'link' in post.keys():
-                line += " - " + post['link']
-            if 'comments' in post.keys():
-                for comment in post['comments']:
-                    line += "\n\t * Comment by %s from (%s) - %s" % (comment['author_name'], comment['author_url'], comment['link'])
-            print(line)
+            if post is not None:
+                line = ""
+                if 'id' in post.keys():
+                    line += "ID: %d" %post['id']
+                if 'title' in post.keys():
+                    line += " - " + html.unescape(post['title']['rendered'])
+                if 'date_gmt' in post.keys():
+                    date_gmt = datetime.strptime(post['date_gmt'] +
+                                                "-GMT", date_format)
+                    line += " on %s" % \
+                            date_gmt.strftime("%d/%m/%Y at %H:%M:%S")
+                if 'link' in post.keys():
+                    line += " - " + post['link']
+                if 'comments' in post.keys():
+                    for comment in post['comments']:
+                        line += "\n\t * Comment by %s from (%s) - %s" % (comment['author_name'], comment['author_url'], comment['link'])
+                print(line)
         
         if len(orphan_comments) > 0:
             # TODO: Untested code, may never be executed, I don't know how the REST API and WordPress handle post/comment link in back-end

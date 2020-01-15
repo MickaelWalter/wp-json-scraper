@@ -210,8 +210,10 @@ license, check LICENSE.txt for more information""")
     session = RequestSession(proxy=proxy, cookies=cookies,
       authorization=authorization)
     try:
+        session.get(target)
         Console.log_success("Connection OK")
     except Exception as e:
+        Console.log_error("Failed to connect to the server")
         exit(0)
     
     # Quite an ugly check to launch a search on all parameters edible 
@@ -247,7 +249,7 @@ license, check LICENSE.txt for more information""")
                 Console.log_info("Post list with comments")
             else:
                 Console.log_info("Post list")
-            posts_list = scanner.get_all_posts(args.comments)
+            posts_list = scanner.get_posts(args.comments)
             InfoDisplayer.display_posts(posts_list, scanner.get_orphans_comments())
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -320,7 +322,7 @@ license, check LICENSE.txt for more information""")
 
     if args.post_export_folder is not None:
         try:
-            posts_list = scanner.get_all_posts()
+            posts_list = scanner.get_posts()
             tags_list = scanner.get_all_tags()
             categories_list = scanner.get_all_categories()
             users_list = scanner.get_all_users()
@@ -354,7 +356,7 @@ license, check LICENSE.txt for more information""")
     
     if args.comment_export_folder is not None:
         try:
-            post_list = scanner.get_all_posts(True)
+            post_list = scanner.get_posts(True)
             orphan_list = scanner.get_orphans_comments()
             print()
             page_number = Exporter.export_comments(post_list, orphan_list, args.comment_export_folder)

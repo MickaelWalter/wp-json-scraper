@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import math
+
 import requests
 from urllib.parse import urlencode
 
@@ -100,10 +102,10 @@ class WPApi:
 
         return self.basic_info
 
-    def crawl_pages(self, url):
+    def crawl_pages(self, url, start=None, num=None):
         """
         Crawls all pages while there is at least one result for the given
-        endpoint
+        endpoint or tries to get pages from start to end
         """
         page = 1
         total_entries = 0
@@ -111,19 +113,29 @@ class WPApi:
         more_entries = True
         entries = []
         base_url = url
+        entries_left = 1
+        per_page = 10
         if self.search_terms is not None:
             if '?' in base_url:
                 base_url += '&' + urlencode({'search': self.search_terms})
             else:
                 base_url += '?' + urlencode({'search': self.search_terms})
-        while more_entries:
+        if start is not None:
+            page = math.floor(start/per_page) + 1
+        if num is not None:
+            entries_left = num
+        while more_entries and entries_left > 0:
             rest_url = url_path_join(self.url, self.api_path, (base_url % page))
+            if start is not None:
+                rest_url += "&per_page=%d" % per_page
             try:
                 req = self.s.get(rest_url)
-                if page == 1 and 'X-WP-Total' in req.headers:
+                if (page == 1 or start is not None and page == math.floor(start/per_page) + 1) and 'X-WP-Total' in req.headers:
                     total_entries = int(req.headers['X-WP-Total'])
                     total_pages = int(req.headers['X-WP-TotalPages'])
-                    print("Number of entries: %d" % total_entries)
+                    print("Total number of entries: %d" % total_entries)
+                    if start is not None and total_entries < start:
+                        start = total_entries - 1
             except HTTPError400:
                 break
             except Exception:
@@ -131,9 +143,34 @@ class WPApi:
             try:
                 json_content = get_content_as_json(req)
                 if type(json_content) is list and len(json_content) > 0:
-                    entries += json_content
-                    if total_entries > 0:
+                    if (start is None or start is not None and page > math.floor(start/per_page) + 1) and num is None:
+                        entries += json_content
+                        if start is not None:
+                            entries_left -= len(json_content)
+                    elif start is not None and page == math.floor(start/per_page) + 1:
+                        if num is None or num is not None and len(json_content[start % per_page:]) < num:
+                            entries += json_content[start % per_page:]
+                            if num is not None:
+                                entries_left -= len(json_content[start % per_page:])
+                        else:
+                            entries += json_content[start % per_page:(start % per_page) + num]
+                            entries_left = 0
+                    else:
+                        if num is not None and entries_left > len(json_content):
+                            entries += json_content
+                            entries_left -= len(json_content)
+                        else:
+                            entries += json_content[:entries_left]
+                            entries_left = 0
+                        
+                    if num is None and start is None and total_entries >= 0:
                         print_progress_bar(page, total_pages,
+                        length=70)
+                    elif num is None and start is not None and total_entries >= 0:
+                        print_progress_bar(total_entries-start-entries_left, total_entries-start,
+                        length=70)
+                    elif num is not None and total_entries > 0:
+                        print_progress_bar(num-entries_left, num,
                         length=70)
                 else:
                     more_entries = False
@@ -142,23 +179,52 @@ class WPApi:
 
             page += 1
 
-        return entries
+        return (entries, total_entries)
 
-    def get_all_posts(self, comments=False):
+    def get_posts(self, comments=False, start=None, num=None, force=False):
         """
-        Retrieves all posts
+        Retrieves all posts or the specified ones
         """
         if self.has_v2 is None:
             self.get_basic_info()
         if not self.has_v2:
             raise WordPressApiNotV2
-        if self.posts is not None and (self.comments_loaded and comments or not comments):
-            return self.posts
-        elif self.posts is None:
-            self.posts = self.crawl_pages('wp/v2/posts?page=%d')
+        if self.posts is not None and start is not None and len(self.posts) < start:
+            start = len(self.posts) - 1
+        if self.posts is not None and (self.comments_loaded and comments or not comments) and not force:
+            if start is not None and num is None and len(self.posts) > start and None not in self.posts[start:]:
+                # If start is specified and not num, we want to return the posts in cache only if they were already cached
+                return self.posts[start:]
+            elif start is None and num is not None and len(self.posts) > num and None not in self.posts[:num]:
+                # If num is specified and not start, we want to do something similar to the above
+                return self.posts[:num]
+            elif start is not None and num is not None and len(self.posts) > start + num and None not in self.posts[start:num]:
+                return self.posts[start:start+num]
+            elif (start is None and (num is None or num > len(self.posts))) and None not in self.posts:
+                return self.posts
+        posts, total_entries = self.crawl_pages('wp/v2/posts?page=%d', start=start, num=num)
+        if self.posts is None:
+            self.posts = posts
+        elif start is not None or num is not None and len(posts) > 0:
+            s = start
+            if start is None:
+                s = 0
+            n = num
+            if num is None:
+                n = total_entries
+            for el in posts:
+                self.posts[s] = el
+                s += 1
+                if s == n:
+                    break
+        if len(self.posts) != total_entries:
+            if start is not None:
+                self.posts = [None] * start + self.posts
+            if num is not None:
+                self.posts += [None] * (total_entries - len(self.posts))
         if not self.comments_loaded and comments:
             # Load comments
-            comment_list = self.crawl_pages('wp/v2/comments?page=%d')
+            comment_list = self.crawl_pages('wp/v2/comments?page=%d')[0]
             for comment in comment_list:
                 found_post = False
                 for i in range(0, len(self.posts)):
@@ -172,7 +238,12 @@ class WPApi:
                     self.orphan_comments.append(comment)
             self.comments_loaded = True
         
-        return self.posts
+        return_posts = self.posts
+        if start is not None and start < len(return_posts):
+            return_posts = return_posts[start:]
+        if num is not None and num < len(return_posts):
+            return_posts = return_posts[:num]
+        return return_posts
 
     def get_all_tags(self):
         """
@@ -185,7 +256,7 @@ class WPApi:
         if self.tags is not None:
             return self.tags
 
-        self.tags = self.crawl_pages('wp/v2/tags?page=%d')
+        self.tags = self.crawl_pages('wp/v2/tags?page=%d')[0]
         return self.tags
 
     def get_all_categories(self):
@@ -199,7 +270,7 @@ class WPApi:
         if self.categories is not None:
             return self.categories
 
-        self.categories = self.crawl_pages('wp/v2/categories?page=%d')
+        self.categories = self.crawl_pages('wp/v2/categories?page=%d')[0]
         return self.categories
 
     def get_all_users(self):
@@ -213,7 +284,7 @@ class WPApi:
         if self.users is not None:
             return self.users
 
-        self.users = self.crawl_pages('wp/v2/users?page=%d')
+        self.users = self.crawl_pages('wp/v2/users?page=%d')[0]
         return self.users
 
     def get_all_media(self):
@@ -227,7 +298,7 @@ class WPApi:
         if self.media is not None:
             return self.media
 
-        self.media = self.crawl_pages('wp/v2/media?page=%d')
+        self.media = self.crawl_pages('wp/v2/media?page=%d')[0]
         return self.media
 
     def get_all_pages(self):
@@ -241,7 +312,7 @@ class WPApi:
         if self.pages is not None:
             return self.pages
 
-        self.pages = self.crawl_pages('wp/v2/pages?page=%d')
+        self.pages = self.crawl_pages('wp/v2/pages?page=%d')[0]
         return self.pages
 
     def get_namespaces(self):

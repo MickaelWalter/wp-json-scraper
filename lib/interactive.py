@@ -2,10 +2,12 @@ import cmd
 import argparse
 import shlex
 import sys
+import re
 
-from lib.wpapi import WPApi
+from lib.wpapi import WPApi, WordPressApiNotV2
 from lib.requestsession import RequestSession
 from lib.console import Console
+from lib.infodisplayer import InfoDisplayer
 
 class ArgumentParser(argparse.ArgumentParser):
     """
@@ -108,6 +110,10 @@ class InteractiveShell(cmd.Cmd):
             return
         if args.what == 'target':
             self.target = args.value
+            if re.match(r'^https?://.*$', self.target) is None:
+                self.target = "http://" + self.target
+            if re.match(r'^.+/$', self.target) is None:
+                self.target += "/"
             InteractiveShell.prompt = Console.red + self.target + Console.normal + " > "
             print("target = %s" % args.value)
             self.scanner = WPApi(self.target, session=self.session)
@@ -156,7 +162,12 @@ class InteractiveShell(cmd.Cmd):
         if args is None:
             return
         if args.what == "all" or args.what == "posts":
-            print("Posts list") # TODO
+            print("Posts list")
+            try:
+                posts = self.scanner.get_posts(comments=False, start=args.start, num=args.limit, force=not args.cache)
+                InfoDisplayer.display_posts(posts)
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
             print()
         if args.what == "all" or args.what == "categories":
             print("Categories list") # TODO
