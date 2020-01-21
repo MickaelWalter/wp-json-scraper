@@ -60,13 +60,20 @@ Lists specified data from the server.
 
 This command gets data from the server and displays it as a simple list (with no details).
 
-It also can export full scraped data to specified CSV or JSON file (see --csv and --json options). By default, 
-WPJsonScraper caches data to avoid requesting the server too often. To get the lastest updates, run this command 
-with the --no-cache option.
+It also can export full scraped data (with all details available) to specified JSON file 
+(see --csv and --json options). If a file extension is not specified, WPJsonScraper will append one. 
+The export options will try to join data with other API endpoint data (e.g. users with posts). CSV files 
+imply that most of the data is removed to ensure human readability. Use this option only to export a list of 
+posts.
+
+**Note:** to avoid having too much noise on the target, WPJsonScraper won't fetch automatically any other 
+endpoint to complete the exported data. If you want all information to be gathered, you have to build the 
+cache first by requesting the data beforehand (for example, getting the user list before exporting the posts).
+
+By default, WPJsonScraper caches data to avoid requesting the server too often. To get the lastest updates, 
+run this command with the --no-cache option.
 
 Use the --limit and --start options to retrieve a subset of all data selected.
-
-When all data is being listed, --csv and --json will append the type to the specified filenames (e.g. mydata-posts.json).
 
 In the case of media files, the files themselves **are not downloaded**.
 

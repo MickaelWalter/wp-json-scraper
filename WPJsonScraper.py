@@ -327,7 +327,7 @@ license, check LICENSE.txt for more information""")
             categories_list = scanner.get_all_categories()
             users_list = scanner.get_all_users()
             print()
-            post_number = Exporter.export_posts(posts_list,
+            post_number = Exporter.export_posts_html(posts_list,
              args.post_export_folder,
              tags_list,
              categories_list,
@@ -343,7 +343,7 @@ license, check LICENSE.txt for more information""")
             pages_list = scanner.get_all_pages()
             users_list = scanner.get_all_users()
             print()
-            page_number = Exporter.export_posts(pages_list,
+            page_number = Exporter.export_posts_html(pages_list,
              args.page_export_folder,
              None,
              None,

@@ -8,6 +8,7 @@ from lib.wpapi import WPApi, WordPressApiNotV2
 from lib.requestsession import RequestSession
 from lib.console import Console
 from lib.infodisplayer import InfoDisplayer
+from lib.exporter import Exporter
 
 class ArgumentParser(argparse.ArgumentParser):
     """
@@ -166,8 +167,14 @@ class InteractiveShell(cmd.Cmd):
             try:
                 posts = self.scanner.get_posts(comments=False, start=args.start, num=args.limit, force=not args.cache)
                 InfoDisplayer.display_posts(posts)
+                if args.json is not None:
+                    Exporter.export_posts(posts, Exporter.JSON, args.json) # TODO tags_list, categories_list, users_list
+                if args.csv is not None:
+                    Exporter.export_posts(posts, Exporter.CSV, args.csv) # TODO tags_list, categories_list, users_list
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "categories":
             print("Categories list") # TODO
