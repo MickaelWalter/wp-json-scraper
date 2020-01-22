@@ -166,6 +166,7 @@ class InteractiveShell(cmd.Cmd):
             print("Posts list")
             try:
                 posts = self.scanner.get_posts(comments=False, start=args.start, num=args.limit, force=not args.cache)
+                Console.log_success("Got %d entries" % len(posts))
                 InfoDisplayer.display_posts(posts)
                 if args.json is not None:
                     Exporter.export_posts(posts, Exporter.JSON, args.json) # TODO tags_list, categories_list, users_list
@@ -177,7 +178,20 @@ class InteractiveShell(cmd.Cmd):
                 Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "categories":
-            print("Categories list") # TODO
+            print("Categories list")
+            try:
+                categories = self.scanner.get_categories(start=args.start, num=args.limit, force=not args.cache)
+                InfoDisplayer.display_categories(categories)
+                """
+                if args.json is not None:
+                    Exporter.export_posts(posts, Exporter.JSON, args.json) # TODO tags_list, categories_list, users_list
+                if args.csv is not None:
+                    Exporter.export_posts(posts, Exporter.CSV, args.csv) # TODO tags_list, categories_list, users_list
+                """
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "tags":
             print("Tags list") # TODO

@@ -181,6 +181,45 @@ class WPApi:
 
         return (entries, total_entries)
 
+    def get_from_cache(self, cache, start=None, num=None):
+        """
+        Tries to fetch data from the given cache
+        """
+        if start is not None and num is None and len(cache) > start and None not in cache[start:]:
+            # If start is specified and not num, we want to return the posts in cache only if they were already cached
+            return cache[start:]
+        elif start is None and num is not None and len(cache) > num and None not in cache[:num]:
+            # If num is specified and not start, we want to do something similar to the above
+            return cache[:num]
+        elif start is not None and num is not None and len(cache) > start + num and None not in cache[start:num]:
+            return cache[start:start+num]
+        elif (start is None and (num is None or num > len(cache))) and None not in cache:
+            return cache
+        
+        return None
+
+    def update_cache(self, cache, values, total_entries, start=None, num=None):
+        if cache is None:
+            cache = values
+        elif start is not None or num is not None and len(values) > 0:
+            s = start
+            if start is None:
+                s = 0
+            n = num
+            if num is None:
+                n = total_entries
+            for el in values:
+                cache[s] = el
+                s += 1
+                if s == n:
+                    break
+        if len(cache) != total_entries:
+            if start is not None:
+                cache = [None] * start + cache
+            if num is not None:
+                cache += [None] * (total_entries - len(cache))
+        return cache
+
     def get_posts(self, comments=False, start=None, num=None, force=False):
         """
         Retrieves all posts or the specified ones
@@ -192,36 +231,13 @@ class WPApi:
         if self.posts is not None and start is not None and len(self.posts) < start:
             start = len(self.posts) - 1
         if self.posts is not None and (self.comments_loaded and comments or not comments) and not force:
-            if start is not None and num is None and len(self.posts) > start and None not in self.posts[start:]:
-                # If start is specified and not num, we want to return the posts in cache only if they were already cached
-                return self.posts[start:]
-            elif start is None and num is not None and len(self.posts) > num and None not in self.posts[:num]:
-                # If num is specified and not start, we want to do something similar to the above
-                return self.posts[:num]
-            elif start is not None and num is not None and len(self.posts) > start + num and None not in self.posts[start:num]:
-                return self.posts[start:start+num]
-            elif (start is None and (num is None or num > len(self.posts))) and None not in self.posts:
-                return self.posts
+            posts = self.get_from_cache(self.posts, start, num)
+            if posts is not None:
+                return posts
         posts, total_entries = self.crawl_pages('wp/v2/posts?page=%d', start=start, num=num)
-        if self.posts is None:
-            self.posts = posts
-        elif start is not None or num is not None and len(posts) > 0:
-            s = start
-            if start is None:
-                s = 0
-            n = num
-            if num is None:
-                n = total_entries
-            for el in posts:
-                self.posts[s] = el
-                s += 1
-                if s == n:
-                    break
-        if len(self.posts) != total_entries:
-            if start is not None:
-                self.posts = [None] * start + self.posts
-            if num is not None:
-                self.posts += [None] * (total_entries - len(self.posts))
+
+        self.posts = self.update_cache(self.posts, posts, total_entries, start, num)
+
         if not self.comments_loaded and comments:
             # Load comments
             comment_list = self.crawl_pages('wp/v2/comments?page=%d')[0]
@@ -259,18 +275,21 @@ class WPApi:
         self.tags = self.crawl_pages('wp/v2/tags?page=%d')[0]
         return self.tags
 
-    def get_all_categories(self):
+    def get_categories(self, start=None, num=None, force=False):
         """
-        Retrieves all categories
+        Retrieves all categories or the specified ones
         """
         if self.has_v2 is None:
             self.get_basic_info()
         if not self.has_v2:
             raise WordPressApiNotV2
-        if self.categories is not None:
-            return self.categories
-
-        self.categories = self.crawl_pages('wp/v2/categories?page=%d')[0]
+        if self.categories is not None and not force:
+            categories = self.get_from_cache(self.categories, start, num)
+            if categories is not None:
+                return categories
+        
+        categories, total_entries = self.crawl_pages('wp/v2/categories?page=%d', start=start, num=num)
+        self.categories = self.update_cache(self.categories, categories, total_entries, start, num)
         return self.categories
 
     def get_all_users(self):

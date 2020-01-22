@@ -283,7 +283,7 @@ license, check LICENSE.txt for more information""")
     if args.categories or args.all:
         try:
             Console.log_info("Category list")
-            categories_list = scanner.get_all_categories()
+            categories_list = scanner.get_categories()
             InfoDisplayer.display_categories(categories_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -324,7 +324,7 @@ license, check LICENSE.txt for more information""")
         try:
             posts_list = scanner.get_posts()
             tags_list = scanner.get_all_tags()
-            categories_list = scanner.get_all_categories()
+            categories_list = scanner.get_categories()
             users_list = scanner.get_all_users()
             print()
             post_number = Exporter.export_posts_html(posts_list,

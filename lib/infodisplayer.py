@@ -207,18 +207,19 @@ class InfoDisplayer:
         """
         print()
         for category in information:
-            line = ""
-            if 'id' in category.keys():
-                line += "Category ID: %d\n" % category['id']
-            if 'name' in category.keys():
-                line += "    Name: %s\n" % category['name']
-            if 'description' in category.keys():
-                line += "    Description: %s\n" % category['description']
-            if 'count' in category.keys():
-                line += "    Number of posts: %d\n" % category['count']
-            if 'link' in category.keys():
-                line += "    Page: %s\n" % category['link']
-            print(line)
+            if category is not None:
+                line = ""
+                if 'id' in category.keys():
+                    line += "Category ID: %d\n" % category['id']
+                if 'name' in category.keys():
+                    line += "    Name: %s\n" % category['name']
+                if 'description' in category.keys():
+                    line += "    Description: %s\n" % category['description']
+                if 'count' in category.keys():
+                    line += "    Number of posts: %d\n" % category['count']
+                if 'link' in category.keys():
+                    line += "    Page: %s\n" % category['link']
+                print(line)
         print()
 
     @staticmethod
