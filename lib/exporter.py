@@ -44,6 +44,70 @@ class Exporter:
     """
 
     @staticmethod
+    def map_params(el, parameters_to_map):
+        """
+        Maps params to ids recursively
+        """
+        for key, value in el.items():
+            if key in parameters_to_map.keys() and parameters_to_map[key] is not None:
+                if type(value) is int:
+                    obj = get_by_id(parameters_to_map[key], value)
+                    if obj is not None:
+                        el[key] = {
+                            'id': value,
+                            'details': obj
+                        }
+                elif type(value) is list:
+                    vlist = []
+                    for v in value:
+                        obj = get_by_id(parameters_to_map[key], v)
+                        vlist.append(obj)
+                    el[key] = {
+                        'ids': value,
+                        'details': vlist
+                    }
+            elif value is dict:
+                Exporter.map_params(value, parameters_to_map)
+
+    @staticmethod
+    def setup_export(vlist, parameters_to_unescape, parameters_to_map):
+        """
+        Sets up the right values for a list export
+        param vlist: the list to prepare for exporting
+        param parameters_to_unescape: parameters to unescape (ex. ["param1", ["param2"]["rendered"]])
+        param parameters_to_map: parameters to map to another (ex. {"param_to_map": param_values_list})
+        """
+        exported_list = []
+
+        for el in vlist:
+            if el is not None:
+                exported_el = copy.deepcopy(el)
+                for key in parameters_to_unescape:
+                    if type(key) is str:
+                        exported_el[key] = html.unescape(exported_el[key])
+                    elif type(key) is list:
+                        selected = exported_el
+                        fullpath = {}
+                        for k in key:
+                            if type(selected) is dict and k in selected.keys():
+                                selected = selected[k]
+                            else:
+                                selected = None
+                                break
+                        if selected is not None and type(selected) is str:
+                            selected = html.unescape(selected)
+                            key.reverse()
+                            fullpath[key[0]] = selected
+                            for k in key[1:]:
+                                fullpath = {k: fullpath}
+                            key.reverse()
+                            exported_el[key[0]] = fullpath[key[0]]
+                Exporter.map_params(exported_el, parameters_to_map)
+                exported_list.append(exported_el)
+
+        return exported_list
+
+    @staticmethod
     def export_posts(posts, fmt, filename, tags_list=None, categories_list=None, users_list=None):
         """
         Exports posts in specified format to specified file
@@ -54,41 +118,17 @@ class Exporter:
         category ids
         param user_list: a list of users to associate them with author id
         """
-        exported_posts = []
-
-        for post in posts:
-            if post is not None:
-                exported_post = copy.deepcopy(post)
-                if "title" in exported_post.keys() and "rendered" in exported_post["title"].keys():
-                    exported_post['title']['rendered'] = html.unescape(exported_post['title']['rendered'])
-                if "content" in exported_post.keys() and "rendered" in exported_post["content"].keys():
-                    exported_post['content']['rendered'] = html.unescape(exported_post['content']['rendered'])
-                if "excerpt" in exported_post.keys() and "rendered" in exported_post["excerpt"].keys():
-                    exported_post['excerpt']['rendered'] = html.unescape(exported_post['excerpt']['rendered'])
-                if 'author' in post.keys() and users_list is not None:
-                    author_obj = get_by_id(users_list, post['author'])
-                    if author_obj is not None:
-                        exported_post['author'] = {
-                            'id': exported_post['author'],
-                        }
-                        exported_post['author']['details'] = author_obj
-                if 'categories' in post.keys() and categories_list is not None:
-                    categories = []
-                    for cat in post['categories']:
-                        cat_obj = get_by_id(categories_list, cat)
-                        categories.append(cat_obj)
-                    exported_post["categories"]["details"] = categories
-                if 'tags' in post.keys() and tags_list is not None:
-                    tags = []
-                    for tag in post['tags']:
-                        tag_obj = get_by_id(tags_list, tag)
-                        tags.append(tag_obj)
-                    exported_post["tags"]["details"] = tags
-                exported_posts.append(exported_post)
+        exported_posts = Exporter.setup_export(posts, 
+            [['title', 'rendered'], ['content', 'rendered'], ['excerpt', 'rendered']],
+            {
+                'author': users_list,
+                'categories': categories_list,
+                'tags': tags_list,
+            })
         
         if filename[-5:] != ".json" and fmt == Exporter.JSON:
             filename += ".json"
-        elif filename[-5:] != ".csv" and fmt == Exporter.CSV:
+        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
             filename += ".csv"
         with open(filename, "w", encoding="utf-8") as f:
             if fmt == Exporter.JSON:
@@ -116,6 +156,43 @@ class Exporter:
                     w.writerow(csv_post)
         return len(exported_posts)
 
+    @staticmethod
+    def export_categories(categories, fmt, filename, category_list=None):
+        """
+        Exports posts in specified format to specified file
+        param posts: the posts to export
+        param fmt: the export format (JSON or CSV)
+        """
+        exported_categories = Exporter.setup_export(categories, # TODO
+            [],
+            {
+                'parent': category_list,
+            })
+        
+        if filename[-5:] != ".json" and fmt == Exporter.JSON:
+            filename += ".json"
+        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
+            filename += ".csv"
+        with open(filename, "w", encoding="utf-8") as f:
+            if fmt == Exporter.JSON:
+                json.dump(exported_categories, f, ensure_ascii=False, indent=4)
+            else:
+                fieldnames = ['id', 'name', 'post_count', 'description', 'parent']
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+
+                w.writeheader()
+                for cat in exported_categories:
+                    csv_cat = {
+                        'id': cat['id'],
+                        'name': cat['name'],
+                        'post_count': cat['count'],
+                        'description': cat['description'],
+                        'parent': cat['parent'],
+                    }
+                    if 'parent' in cat.keys() and type(cat['parent']) is dict and 'details' in cat['parent'].keys() and 'name' in cat['parent']['details'].keys():
+                        csv_cat["parent"] = cat['parent']['details']['name']
+                    w.writerow(csv_cat)
+        return len(exported_categories)
     
     @staticmethod
     def export_posts_html(posts, folder, tags_list=None, categories_list=None,

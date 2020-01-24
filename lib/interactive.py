@@ -169,9 +169,16 @@ class InteractiveShell(cmd.Cmd):
                 Console.log_success("Got %d entries" % len(posts))
                 InfoDisplayer.display_posts(posts)
                 if args.json is not None:
-                    Exporter.export_posts(posts, Exporter.JSON, args.json) # TODO tags_list, categories_list, users_list
+                    Exporter.export_posts(posts, Exporter.JSON, args.json, 
+                     self.scanner.tags,
+                     self.scanner.categories,
+                     self.scanner.users
+                     )
                 if args.csv is not None:
-                    Exporter.export_posts(posts, Exporter.CSV, args.csv) # TODO tags_list, categories_list, users_list
+                    Exporter.export_posts(posts, Exporter.CSV, args.csv,
+                     self.scanner.tags,
+                     self.scanner.categories,
+                     self.scanner.users)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -182,12 +189,10 @@ class InteractiveShell(cmd.Cmd):
             try:
                 categories = self.scanner.get_categories(start=args.start, num=args.limit, force=not args.cache)
                 InfoDisplayer.display_categories(categories)
-                """
                 if args.json is not None:
-                    Exporter.export_posts(posts, Exporter.JSON, args.json) # TODO tags_list, categories_list, users_list
+                    Exporter.export_categories(categories, Exporter.JSON, args.json, self.scanner.categories)
                 if args.csv is not None:
-                    Exporter.export_posts(posts, Exporter.CSV, args.csv) # TODO tags_list, categories_list, users_list
-                """
+                    Exporter.export_categories(categories, Exporter.CSV, args.csv, self.scanner.categories)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
