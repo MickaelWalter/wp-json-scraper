@@ -191,13 +191,19 @@ class InteractiveShell(cmd.Cmd):
                 Console.log_success("Got %d entries" % len(posts))
                 InfoDisplayer.display_posts(posts)
                 if args.json is not None:
-                    Exporter.export_posts(posts, Exporter.JSON, args.json, 
+                    json_file = args.json
+                    if args.what == "all":
+                        json_file = args.json + "-posts"
+                    Exporter.export_posts(posts, Exporter.JSON, json_file, 
                      self.scanner.tags,
                      self.scanner.categories,
                      self.scanner.users
                      )
                 if args.csv is not None:
-                    Exporter.export_posts(posts, Exporter.CSV, args.csv,
+                    csv_file = args.csv
+                    if args.what == "all":
+                        csv_file = args.csv + "-posts"
+                    Exporter.export_posts(posts, Exporter.CSV, csv_file,
                      self.scanner.tags,
                      self.scanner.categories,
                      self.scanner.users)
@@ -212,16 +218,39 @@ class InteractiveShell(cmd.Cmd):
                 categories = self.scanner.get_categories(start=args.start, num=args.limit, force=not args.cache)
                 InfoDisplayer.display_categories(categories)
                 if args.json is not None:
-                    Exporter.export_categories(categories, Exporter.JSON, args.json, self.scanner.categories)
+                    json_file = args.json
+                    if args.what == "all":
+                        json_file = args.json + "-categories"
+                    Exporter.export_categories(categories, Exporter.JSON, json_file, self.scanner.categories)
                 if args.csv is not None:
-                    Exporter.export_categories(categories, Exporter.CSV, args.csv, self.scanner.categories)
+                    csv_file = args.csv
+                    if args.what == "all":
+                        csv_file = args.csv + "-categories"
+                    Exporter.export_categories(categories, Exporter.CSV, csv_file, self.scanner.categories)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
                 Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "tags":
-            print("Tags list") # TODO
+            print("Tags list")
+            try:
+                tags = self.scanner.get_tags(start=args.start, num=args.limit, force=not args.cache)
+                InfoDisplayer.display_tags(tags)
+                if args.json is not None:
+                    json_file = args.json
+                    if args.what == "all":
+                        json_file = args.json + "-tags"
+                    Exporter.export_tags(tags, Exporter.JSON, json_file)
+                if args.csv is not None:
+                    csv_file = args.csv
+                    if args.what == "all":
+                        csv_file = args.csv + "-tags"
+                    Exporter.export_tags(tags, Exporter.CSV, csv_file)
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "pages":
             print("Pages list") # TODO

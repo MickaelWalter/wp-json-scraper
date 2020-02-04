@@ -159,9 +159,11 @@ class Exporter:
     @staticmethod
     def export_categories(categories, fmt, filename, category_list=None):
         """
-        Exports posts in specified format to specified file
-        param posts: the posts to export
+        Exports categories in specified format to specified file
+        param categories: the categories to export
         param fmt: the export format (JSON or CSV)
+        param filename: the path to the file to write
+        param category_list: the list of categories to be used as parents
         """
         exported_categories = Exporter.setup_export(categories, # TODO
             [],
@@ -194,6 +196,38 @@ class Exporter:
                     w.writerow(csv_cat)
         return len(exported_categories)
     
+    @staticmethod
+    def export_tags(tags, fmt, filename):
+        """
+        Exports tags in specified format to specified file
+        param tags: the tags to export
+        param fmt: the export format (JSON or CSV)
+        param filename: the path to the file to write
+        """
+        if filename[-5:] != ".json" and fmt == Exporter.JSON:
+            filename += ".json"
+        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
+            filename += ".csv"
+        
+        exported_tags = tags # It seems that no modification will be done for this one, so no deepcopy
+        with open(filename, "w", encoding="utf-8") as f:
+            if fmt == Exporter.JSON:
+                json.dump(exported_tags, f, ensure_ascii=False, indent=4)
+            else:
+                fieldnames = ['id', 'name', 'post_count', 'description']
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+
+                w.writeheader()
+                for tag in exported_tags:
+                    csv_tag = {
+                        'id': tag['id'],
+                        'name': tag['name'],
+                        'post_count': tag['count'],
+                        'description': tag['description'],
+                    }
+                    w.writerow(csv_tag)
+        return len(exported_tags)
+
     @staticmethod
     def export_posts_html(posts, folder, tags_list=None, categories_list=None,
     users_list=None):

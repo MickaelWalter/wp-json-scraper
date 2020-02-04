@@ -201,13 +201,15 @@ class WPApi:
     def update_cache(self, cache, values, total_entries, start=None, num=None):
         if cache is None:
             cache = values
-        elif start is not None or num is not None and len(values) > 0:
+        elif len(values) > 0:
             s = start
             if start is None:
                 s = 0
             n = num
             if num is None:
                 n = total_entries
+            if n > len(cache):
+                cache += [None] * (n - len(cache))
             for el in values:
                 cache[s] = el
                 s += 1
@@ -261,7 +263,7 @@ class WPApi:
             return_posts = return_posts[:num]
         return return_posts
 
-    def get_all_tags(self):
+    def get_tags(self, start=None, num=None, force=False):
         """
         Retrieves all tags
         """
@@ -269,10 +271,15 @@ class WPApi:
             self.get_basic_info()
         if not self.has_v2:
             raise WordPressApiNotV2
-        if self.tags is not None:
-            return self.tags
+        if self.tags is not None and start is not None and len(self.tags) < start:
+            start = len(self.tags) - 1
+        if self.tags is not None and not force:
+            tags = self.get_from_cache(self.tags, start, num)
+            if tags is not None:
+                return tags
 
-        self.tags = self.crawl_pages('wp/v2/tags?page=%d')[0]
+        tags, total_entries = self.crawl_pages('wp/v2/tags?page=%d')
+        self.tags = self.update_cache(self.tags, tags, total_entries, start, num)
         return self.tags
 
     def get_categories(self, start=None, num=None, force=False):

@@ -291,7 +291,7 @@ license, check LICENSE.txt for more information""")
     if args.tags or args.all:
         try:
             Console.log_info("Tags list")
-            tags_list = scanner.get_all_tags()
+            tags_list = scanner.get_tags()
             InfoDisplayer.display_tags(tags_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -323,7 +323,7 @@ license, check LICENSE.txt for more information""")
     if args.post_export_folder is not None:
         try:
             posts_list = scanner.get_posts()
-            tags_list = scanner.get_all_tags()
+            tags_list = scanner.get_tags()
             categories_list = scanner.get_categories()
             users_list = scanner.get_all_users()
             print()

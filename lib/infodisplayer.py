@@ -230,18 +230,19 @@ class InfoDisplayer:
         """
         print()
         for tag in information:
-            line = ""
-            if 'id' in tag.keys():
-                line += "Tag ID: %d\n" % tag['id']
-            if 'name' in tag.keys():
-                line += "    Name: %s\n" % tag['name']
-            if 'description' in tag.keys():
-                line += "    Description: %s\n" % tag['description']
-            if 'count' in tag.keys():
-                line += "    Number of posts: %d\n" % tag['count']
-            if 'link' in tag.keys():
-                line += "    Page: %s\n" % tag['link']
-            print(line)
+            if tag is not None:
+                line = ""
+                if 'id' in tag.keys():
+                    line += "Tag ID: %d\n" % tag['id']
+                if 'name' in tag.keys():
+                    line += "    Name: %s\n" % tag['name']
+                if 'description' in tag.keys():
+                    line += "    Description: %s\n" % tag['description']
+                if 'count' in tag.keys():
+                    line += "    Number of posts: %d\n" % tag['count']
+                if 'link' in tag.keys():
+                    line += "    Page: %s\n" % tag['link']
+                print(line)
         print()
 
     @staticmethod
