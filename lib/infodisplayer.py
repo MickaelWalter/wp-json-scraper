@@ -284,14 +284,15 @@ class InfoDisplayer:
         """
         print()
         for page in information:
-            line = ""
-            if 'id' in page.keys():
-                line += "ID: %d" % page['id']
-            if 'title' in page.keys() and 'rendered' in page['title']:
-                line += " - " + html.unescape(page['title']['rendered'])
-            if 'link' in page.keys():
-                line += " - " + page['link']
-            print(line)
+            if page is not None:
+                line = ""
+                if 'id' in page.keys():
+                    line += "ID: %d" % page['id']
+                if 'title' in page.keys() and 'rendered' in page['title']:
+                    line += " - " + html.unescape(page['title']['rendered'])
+                if 'link' in page.keys():
+                    line += " - " + page['link']
+                print(line)
         print()
 
     @staticmethod

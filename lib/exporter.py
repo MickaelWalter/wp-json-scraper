@@ -87,10 +87,16 @@ class Exporter:
                         exported_el[key] = html.unescape(exported_el[key])
                     elif type(key) is list:
                         selected = exported_el
+                        siblings = []
                         fullpath = {}
                         for k in key:
                             if type(selected) is dict and k in selected.keys():
+                                sib = {}
+                                for e in selected.keys():
+                                    if e != k:
+                                        sib[e] = selected[e]
                                 selected = selected[k]
+                                siblings.append(sib)
                             else:
                                 selected = None
                                 break
@@ -98,8 +104,14 @@ class Exporter:
                             selected = html.unescape(selected)
                             key.reverse()
                             fullpath[key[0]] = selected
+                            s = len(siblings) - 1
+                            for e in siblings[s].keys():
+                                fullpath[e] = siblings[s][e]
                             for k in key[1:]:
                                 fullpath = {k: fullpath}
+                                s -= 1
+                                for e in siblings[s].keys():
+                                    fullpath[e] = siblings[s][e]
                             key.reverse()
                             exported_el[key[0]] = fullpath[key[0]]
                 Exporter.map_params(exported_el, parameters_to_map)
@@ -227,6 +239,53 @@ class Exporter:
                     }
                     w.writerow(csv_tag)
         return len(exported_tags)
+
+    @staticmethod
+    def export_pages(pages, fmt, filename, parent_pages=None, users=None):
+        """
+        Exports pages in specified format to specified file
+        param pages: the pages to export
+        param fmt: the export format (JSON or CSV)
+        param filename: the path to the file to write
+        param parent_pages: the list of all cached pages, to get parents
+        param users: the list of all cached users, to get users
+        """
+        exported_pages = Exporter.setup_export(pages,
+            [["guid", "rendered"], ["title", "rendered"], ["content", "rendered"], ["excerpt", "rendered"]],
+            {
+                'parent': parent_pages,
+                'author': users,
+            })
+        
+        if filename[-5:] != ".json" and fmt == Exporter.JSON:
+            filename += ".json"
+        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
+            filename += ".csv"
+
+        with open(filename, "w", encoding="utf-8") as f:
+            if fmt == Exporter.JSON:
+                json.dump(exported_pages, f, ensure_ascii=False, indent=4)
+            else:
+                fieldnames = ['id', 'title', 'date', 'modified', 'status', 'link', 'author', 'protected']
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+
+                w.writeheader()
+                for page in exported_pages:
+                    csv_page = {
+                        'id': page['id'],
+                        'date': page['date'],
+                        'modified': page['modified'],
+                        'status': page['status'],
+                        'link': page['link'],
+                        'title': page['title']['rendered'],
+                        'protected': page['content']['protected'],
+                    }
+                    if 'author' in page.keys() and page['author'] is dict and 'details' in page['author'].keys() and 'name' in page['author']['details'].keys():
+                        csv_page['author'] = page['author']['details']['name']
+                    else:
+                        csv_page['author'] = page['author']
+                    w.writerow(csv_page)
+        return len(exported_pages)
 
     @staticmethod
     def export_posts_html(posts, folder, tags_list=None, categories_list=None,

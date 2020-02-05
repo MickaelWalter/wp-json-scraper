@@ -327,7 +327,7 @@ class WPApi:
         self.media = self.crawl_pages('wp/v2/media?page=%d')[0]
         return self.media
 
-    def get_all_pages(self):
+    def get_pages(self, start=None, num=None, force=False):
         """
         Retrieves all pages
         """
@@ -335,10 +335,13 @@ class WPApi:
             self.get_basic_info()
         if not self.has_v2:
             raise WordPressApiNotV2
-        if self.pages is not None:
-            return self.pages
+        if self.pages is not None and not force:
+            pages = self.get_from_cache(self.pages, start, num)
+            if pages is not None:
+                return pages
 
-        self.pages = self.crawl_pages('wp/v2/pages?page=%d')[0]
+        pages, total_entries = self.crawl_pages('wp/v2/pages?page=%d')
+        self.pages = self.update_cache(self.pages, pages, total_entries, start, num)
         return self.pages
 
     def get_namespaces(self):

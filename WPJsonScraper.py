@@ -257,7 +257,7 @@ license, check LICENSE.txt for more information""")
     if args.pages or args.all:
         try:
             Console.log_info("Page list")
-            pages_list = scanner.get_all_pages()
+            pages_list = scanner.get_pages()
             InfoDisplayer.display_pages(pages_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -340,7 +340,7 @@ license, check LICENSE.txt for more information""")
 
     if args.page_export_folder is not None:
         try:
-            pages_list = scanner.get_all_pages()
+            pages_list = scanner.get_pages()
             users_list = scanner.get_all_users()
             print()
             page_number = Exporter.export_posts_html(pages_list,

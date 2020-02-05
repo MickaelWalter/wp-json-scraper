@@ -253,7 +253,30 @@ class InteractiveShell(cmd.Cmd):
                 Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "pages":
-            print("Pages list") # TODO
+            print("Pages list")
+            try:
+                pages = self.scanner.get_pages(start=args.start, num=args.limit, force=not args.cache)
+                InfoDisplayer.display_pages(pages)
+                if args.json is not None:
+                    json_file = args.json
+                    if args.what == "all":
+                        json_file = args.json + "-pages"
+                    Exporter.export_pages(pages, Exporter.JSON, json_file, 
+                     self.scanner.pages,
+                     self.scanner.users
+                     )
+                if args.csv is not None:
+                    csv_file = args.csv
+                    if args.what == "all":
+                        csv_file = args.csv + "-pages"
+                    Exporter.export_pages(pages, Exporter.CSV, csv_file,
+                     self.scanner.pages,
+                     self.scanner.users
+                     )
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "comments":
             print("Comments list") # TODO
