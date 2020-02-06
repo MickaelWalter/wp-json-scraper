@@ -176,6 +176,31 @@ class InfoDisplayer:
         print()
 
     @staticmethod
+    def display_comments(information):
+        """
+        Displays comments published on the WordPress instance
+        param information: information as a JSON object
+        """
+        print()
+        date_format = "%Y-%m-%dT%H:%M:%S-%Z"
+        for comment in information:
+            if comment is not None:
+                line = ""
+                if 'id' in comment.keys():
+                    line += "ID: %d" % comment['id']
+                if 'post' in comment.keys():
+                    line += " - Post ID: %d" % comment['post'] #html.unescape(post['title']['rendered'])
+                if 'author_name' in comment.keys():
+                    line += " - By %s" % comment['author_name']
+                if 'date' in comment.keys():
+                    date_gmt = datetime.strptime(comment['date_gmt'] +
+                                                "-GMT", date_format)
+                    line += " on %s" % \
+                            date_gmt.strftime("%d/%m/%Y at %H:%M:%S")
+                print(line)
+        print()
+
+    @staticmethod
     def display_users(information):
         """
         Displays users on the WordPress instance

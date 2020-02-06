@@ -62,6 +62,7 @@ class WPApi:
         self.s = None
         self.comments_loaded = False
         self.orphan_comments = []
+        self.comments = None
 
         if session is not None:
             self.s = session
@@ -222,6 +223,25 @@ class WPApi:
                 cache += [None] * (total_entries - len(cache))
         return cache
 
+    def get_comments(self, start=None, num=None, force=False):
+        """
+        Retrieves all comments
+        """
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if not self.has_v2:
+            raise WordPressApiNotV2
+        if self.comments is not None and start is not None and len(self.comments) < start:
+            start = len(self.comments) - 1
+        if self.comments is not None and not force:
+            comments = self.get_from_cache(self.comments, start, num)
+            if comments is not None:
+                return comments
+
+        comments, total_entries = self.crawl_pages('wp/v2/comments?page=%d')
+        self.comments = self.update_cache(self.comments, comments, total_entries, start, num)
+        return comments
+
     def get_posts(self, comments=False, start=None, num=None, force=False):
         """
         Retrieves all posts or the specified ones
@@ -280,7 +300,7 @@ class WPApi:
 
         tags, total_entries = self.crawl_pages('wp/v2/tags?page=%d')
         self.tags = self.update_cache(self.tags, tags, total_entries, start, num)
-        return self.tags
+        return tags
 
     def get_categories(self, start=None, num=None, force=False):
         """
@@ -297,7 +317,7 @@ class WPApi:
         
         categories, total_entries = self.crawl_pages('wp/v2/categories?page=%d', start=start, num=num)
         self.categories = self.update_cache(self.categories, categories, total_entries, start, num)
-        return self.categories
+        return categories
 
     def get_all_users(self):
         """
@@ -342,7 +362,7 @@ class WPApi:
 
         pages, total_entries = self.crawl_pages('wp/v2/pages?page=%d')
         self.pages = self.update_cache(self.pages, pages, total_entries, start, num)
-        return self.pages
+        return pages
 
     def get_namespaces(self):
         """

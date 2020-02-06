@@ -279,7 +279,30 @@ class InteractiveShell(cmd.Cmd):
                 Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "comments":
-            print("Comments list") # TODO
+            print("Comments list")
+            try:
+                comments = self.scanner.get_comments(start=args.start, num=args.limit, force=not args.cache)
+                InfoDisplayer.display_comments(comments)
+                if args.json is not None:
+                    json_file = args.json
+                    if args.what == "all":
+                        json_file = args.json + "-comments"
+                    Exporter.export_comments_interactive(comments, Exporter.JSON, json_file, 
+                     #self.scanner.posts, # May be too verbose
+                     users=self.scanner.users
+                     )
+                if args.csv is not None:
+                    csv_file = args.csv
+                    if args.what == "all":
+                        csv_file = args.csv + "-comments"
+                    Exporter.export_comments_interactive(comments, Exporter.CSV, csv_file,
+                     #self.scanner.posts,
+                     users=self.scanner.users
+                     )
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "media":
             print("Media list") # TODO

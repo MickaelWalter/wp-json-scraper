@@ -287,6 +287,55 @@ class Exporter:
                     w.writerow(csv_page)
         return len(exported_pages)
 
+    # FIXME to be refactored
+    @staticmethod
+    def export_comments_interactive(comments, fmt, filename, parent_posts=None, users=None):
+        """
+        Exports comments in specified format to specified file
+        param comments: the comments to export
+        param fmt: the export format (JSON or CSV)
+        param filename: the path to the file to write
+        param parent_posts: the list of all cached posts, to get parent posts (not used yet because this could be too verbose)
+        param users: the list of all cached users, to get users
+        """
+        exported_comments = Exporter.setup_export(comments,
+            [["content", "rendered"]],
+            {
+                'post': parent_posts,
+                'author': users,
+            })
+        
+        if filename[-5:] != ".json" and fmt == Exporter.JSON:
+            filename += ".json"
+        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
+            filename += ".csv"
+
+        with open(filename, "w", encoding="utf-8") as f:
+            if fmt == Exporter.JSON:
+                json.dump(exported_comments, f, ensure_ascii=False, indent=4)
+            else:
+                fieldnames = ['id', 'post', 'date', 'status', 'link', 'author']
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+
+                w.writeheader()
+                for comment in exported_comments:
+                    csv_comment = {
+                        'id': comment['id'],
+                        'date': comment['date'],
+                        'status': comment['status'],
+                        'link': comment['link'],
+                    }
+                    if 'author' in comment.keys() and comment['author'] is dict and 'details' in comment['author'].keys() and 'name' in comment['author']['details'].keys():
+                        csv_comment['author'] = "%s (%d)" % (comment['author']['details']['name'], comment['author']['id'])
+                    else:
+                        csv_comment['author'] = comment['author_name']
+                    if 'post' in comment.keys() and comment['post'] is dict and 'details' in comment['post'].keys() and 'title' in comment['post']['details'].keys():
+                        csv_comment['post'] = comment['post']['details']['title']['rendered']
+                    else:
+                        csv_comment['post'] = comment['post']
+                    w.writerow(csv_comment)
+        return len(exported_comments)
+
     @staticmethod
     def export_posts_html(posts, folder, tags_list=None, categories_list=None,
     users_list=None):
