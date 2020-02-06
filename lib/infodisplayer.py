@@ -208,20 +208,21 @@ class InfoDisplayer:
         """
         print()
         for user in information:
-            line = ""
-            if 'id' in user.keys():
-                line += "User ID: %d\n" % user['id']
-            if 'name' in user.keys():
-                line += "    Display name: %s\n" % user['name']
-            if 'slug' in user.keys():
-                line += "    User name (probable): %s\n" % user['slug']
-            if 'description' in user.keys():
-                line += "    User description: %s\n" % user['description']
-            if 'url' in user.keys():
-                line += "    User website: %s\n" % user['url']
-            if 'link' in user.keys():
-                line += "    User personal page: %s\n" % user['link']
-            print(line)
+            if user is not None:
+                line = ""
+                if 'id' in user.keys():
+                    line += "User ID: %d\n" % user['id']
+                if 'name' in user.keys():
+                    line += "    Display name: %s\n" % user['name']
+                if 'slug' in user.keys():
+                    line += "    User name (probable): %s\n" % user['slug']
+                if 'description' in user.keys():
+                    line += "    User description: %s\n" % user['description']
+                if 'url' in user.keys():
+                    line += "    User website: %s\n" % user['url']
+                if 'link' in user.keys():
+                    line += "    User personal page: %s\n" % user['link']
+                print(line)
         print()
 
     @staticmethod

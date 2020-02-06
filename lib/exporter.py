@@ -241,6 +241,38 @@ class Exporter:
         return len(exported_tags)
 
     @staticmethod
+    def export_users(users, fmt, filename):
+        """
+        Exports users in specified format to specified file
+        param users: the users to export
+        param fmt: the export format (JSON or CSV)
+        param filename: the path to the file to write
+        """
+        if filename[-5:] != ".json" and fmt == Exporter.JSON:
+            filename += ".json"
+        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
+            filename += ".csv"
+        
+        exported_users = users # It seems that no modification will be done for this one, so no deepcopy
+        with open(filename, "w", encoding="utf-8") as f:
+            if fmt == Exporter.JSON:
+                json.dump(exported_users, f, ensure_ascii=False, indent=4)
+            else:
+                fieldnames = ['id', 'name', 'link', 'description']
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+
+                w.writeheader()
+                for user in exported_users:
+                    csv_user = {
+                        'id': user['id'],
+                        'name': user['name'],
+                        'link': user['link'],
+                        'description': user['description'],
+                    }
+                    w.writerow(csv_user)
+        return len(exported_users)
+
+    @staticmethod
     def export_pages(pages, fmt, filename, parent_pages=None, users=None):
         """
         Exports pages in specified format to specified file

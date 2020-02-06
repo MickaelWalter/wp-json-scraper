@@ -319,19 +319,22 @@ class WPApi:
         self.categories = self.update_cache(self.categories, categories, total_entries, start, num)
         return categories
 
-    def get_all_users(self):
+    def get_users(self, start=None, num=None, force=False):
         """
-        Retrieves all users
+        Retrieves all users or the specified ones
         """
         if self.has_v2 is None:
             self.get_basic_info()
         if not self.has_v2:
             raise WordPressApiNotV2
-        if self.users is not None:
-            return self.users
+        if self.users is not None and not force:
+            users = self.get_from_cache(self.users, start, num)
+            if users is not None:
+                return users
 
-        self.users = self.crawl_pages('wp/v2/users?page=%d')[0]
-        return self.users
+        users, total_entries = self.crawl_pages('wp/v2/users?page=%d', start=start, num=num)
+        self.users = self.update_cache(self.users, users, total_entries, start, num)
+        return users
 
     def get_all_media(self):
         """

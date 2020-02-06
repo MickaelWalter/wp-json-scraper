@@ -265,7 +265,7 @@ license, check LICENSE.txt for more information""")
     if args.users or args.all:
         try:
             Console.log_info("User list")
-            users_list = scanner.get_all_users()
+            users_list = scanner.get_users()
             InfoDisplayer.display_users(users_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -325,7 +325,7 @@ license, check LICENSE.txt for more information""")
             posts_list = scanner.get_posts()
             tags_list = scanner.get_tags()
             categories_list = scanner.get_categories()
-            users_list = scanner.get_all_users()
+            users_list = scanner.get_users()
             print()
             post_number = Exporter.export_posts_html(posts_list,
              args.post_export_folder,
@@ -341,7 +341,7 @@ license, check LICENSE.txt for more information""")
     if args.page_export_folder is not None:
         try:
             pages_list = scanner.get_pages()
-            users_list = scanner.get_all_users()
+            users_list = scanner.get_users()
             print()
             page_number = Exporter.export_posts_html(pages_list,
              args.page_export_folder,

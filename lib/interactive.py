@@ -186,7 +186,24 @@ class InteractiveShell(cmd.Cmd):
             return
         # The checks must be ordered by dependencies
         if args.what == "all" or args.what == "users":
-            print("Users list") # TODO
+            print("Users list")
+            try:
+                users = self.scanner.get_users(start=args.start, num=args.limit, force=not args.cache)
+                InfoDisplayer.display_users(users)
+                if args.json is not None:
+                    json_file = args.json
+                    if args.what == "all":
+                        json_file = args.json + "-users"
+                    Exporter.export_users(users, Exporter.JSON, json_file)
+                if args.csv is not None:
+                    csv_file = args.csv
+                    if args.what == "all":
+                        csv_file = args.csv + "-users"
+                    Exporter.export_users(users, Exporter.CSV, csv_file)
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
             print()
         if args.what == "all" or args.what == "tags":
             print("Tags list")
