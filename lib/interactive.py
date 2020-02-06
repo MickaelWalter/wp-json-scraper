@@ -184,29 +184,25 @@ class InteractiveShell(cmd.Cmd):
         args = parser.custom_parse_args(arg)
         if args is None:
             return
-        if args.what == "all" or args.what == "posts":
-            print("Posts list")
+        # The checks must be ordered by dependencies
+        if args.what == "all" or args.what == "users":
+            print("Users list") # TODO
+            print()
+        if args.what == "all" or args.what == "tags":
+            print("Tags list")
             try:
-                posts = self.scanner.get_posts(comments=False, start=args.start, num=args.limit, force=not args.cache)
-                Console.log_success("Got %d entries" % len(posts))
-                InfoDisplayer.display_posts(posts)
+                tags = self.scanner.get_tags(start=args.start, num=args.limit, force=not args.cache)
+                InfoDisplayer.display_tags(tags)
                 if args.json is not None:
                     json_file = args.json
                     if args.what == "all":
-                        json_file = args.json + "-posts"
-                    Exporter.export_posts(posts, Exporter.JSON, json_file, 
-                     self.scanner.tags,
-                     self.scanner.categories,
-                     self.scanner.users
-                     )
+                        json_file = args.json + "-tags"
+                    Exporter.export_tags(tags, Exporter.JSON, json_file)
                 if args.csv is not None:
                     csv_file = args.csv
                     if args.what == "all":
-                        csv_file = args.csv + "-posts"
-                    Exporter.export_posts(posts, Exporter.CSV, csv_file,
-                     self.scanner.tags,
-                     self.scanner.categories,
-                     self.scanner.users)
+                        csv_file = args.csv + "-tags"
+                    Exporter.export_tags(tags, Exporter.CSV, csv_file)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -232,21 +228,29 @@ class InteractiveShell(cmd.Cmd):
             except IOError as e:
                 Console.log_error("Could not open %s for writing" % e.filename)
             print()
-        if args.what == "all" or args.what == "tags":
-            print("Tags list")
+        if args.what == "all" or args.what == "posts":
+            print("Posts list")
             try:
-                tags = self.scanner.get_tags(start=args.start, num=args.limit, force=not args.cache)
-                InfoDisplayer.display_tags(tags)
+                posts = self.scanner.get_posts(comments=False, start=args.start, num=args.limit, force=not args.cache)
+                Console.log_success("Got %d entries" % len(posts))
+                InfoDisplayer.display_posts(posts)
                 if args.json is not None:
                     json_file = args.json
                     if args.what == "all":
-                        json_file = args.json + "-tags"
-                    Exporter.export_tags(tags, Exporter.JSON, json_file)
+                        json_file = args.json + "-posts"
+                    Exporter.export_posts(posts, Exporter.JSON, json_file, 
+                     self.scanner.tags,
+                     self.scanner.categories,
+                     self.scanner.users
+                     )
                 if args.csv is not None:
                     csv_file = args.csv
                     if args.what == "all":
-                        csv_file = args.csv + "-tags"
-                    Exporter.export_tags(tags, Exporter.CSV, csv_file)
+                        csv_file = args.csv + "-posts"
+                    Exporter.export_posts(posts, Exporter.CSV, csv_file,
+                     self.scanner.tags,
+                     self.scanner.categories,
+                     self.scanner.users)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -306,9 +310,6 @@ class InteractiveShell(cmd.Cmd):
             print()
         if args.what == "all" or args.what == "media":
             print("Media list") # TODO
-            print()
-        if args.what == "all" or args.what == "users":
-            print("Users list") # TODO
             print()
 
 
