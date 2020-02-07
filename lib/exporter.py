@@ -32,32 +32,38 @@ from lib.utils import get_by_id
 
 class Exporter:
     """
-    Utility functions to export data
+        Utility functions to export data
     """
     JSON = 1
     """
-    Represents the JSON format for format choice
+        Represents the JSON format for format choice
     """
     CSV = 2
     """
-    Represents the CSV format fo format choice
+        Represents the CSV format for format choice
     """
 
     @staticmethod
     def map_params(el, parameters_to_map):
         """
-        Maps params to ids recursively
+            Maps params to ids recursively.
+
+            This method automatically maps IDs with the correponding objects given in parameters_to_map. 
+            The mapping is made in place as el is passed as a reference.
+
+            :param el: the element that have ID references
+            :param parameters_to_map: a dict containing lists of elements to map by ids with el
         """
         for key, value in el.items():
             if key in parameters_to_map.keys() and parameters_to_map[key] is not None:
-                if type(value) is int:
+                if type(value) is int: # Only one ID to map
                     obj = get_by_id(parameters_to_map[key], value)
                     if obj is not None:
                         el[key] = {
                             'id': value,
                             'details': obj
                         }
-                elif type(value) is list:
+                elif type(value) is list: # The object is a list of IDs, we map each one
                     vlist = []
                     for v in value:
                         obj = get_by_id(parameters_to_map[key], v)
@@ -72,23 +78,30 @@ class Exporter:
     @staticmethod
     def setup_export(vlist, parameters_to_unescape, parameters_to_map):
         """
-        Sets up the right values for a list export
-        param vlist: the list to prepare for exporting
-        param parameters_to_unescape: parameters to unescape (ex. ["param1", ["param2"]["rendered"]])
-        param parameters_to_map: parameters to map to another (ex. {"param_to_map": param_values_list})
+            Sets up the right values for a list export.
+
+            This function flattens alist of objects before its serialization in the expected format. 
+            It also makes a deepcopy to ensure that the original vlist is not altered.
+
+            :param vlist: the list to prepare for exporting
+            :param parameters_to_unescape: parameters to unescape (ex. ["param1", ["param2"]["rendered"]])
+            :param parameters_to_map: parameters to map to another (ex. {"param_to_map": param_values_list})
         """
         exported_list = []
 
         for el in vlist:
             if el is not None:
+                # First copy the object
                 exported_el = copy.deepcopy(el)
+                # Look for parameters to HTML unescape
                 for key in parameters_to_unescape:
-                    if type(key) is str:
+                    if type(key) is str: # If the parameter is at the root
                         exported_el[key] = html.unescape(exported_el[key])
-                    elif type(key) is list:
+                    elif type(key) is list: # If the parameter is nested
                         selected = exported_el
                         siblings = []
                         fullpath = {}
+                        # We look for the leaf first, not forgetting sibling branches for rebuilding the tree later
                         for k in key:
                             if type(selected) is dict and k in selected.keys():
                                 sib = {}
@@ -100,6 +113,7 @@ class Exporter:
                             else:
                                 selected = None
                                 break
+                        # If we can unescape the parameter, we do it and rebuild the tree starting from the leaf
                         if selected is not None and type(selected) is str:
                             selected = html.unescape(selected)
                             key.reverse()
@@ -114,21 +128,92 @@ class Exporter:
                                     fullpath[e] = siblings[s][e]
                             key.reverse()
                             exported_el[key[0]] = fullpath[key[0]]
+                # If there is any parameter to map, we do it here
                 Exporter.map_params(exported_el, parameters_to_map)
+                # The resulting element is appended to the list of exported elements
                 exported_list.append(exported_el)
 
         return exported_list
 
     @staticmethod
+    def prepare_filename(filename, fmt):
+        """
+            Returns a filename with the proper extension according to the given format
+
+            :param filename: the filename to clean
+            :param fmt: the file format
+            :return: the cleaned filename
+        """
+        if filename[-5:] != ".json" and fmt == Exporter.JSON:
+            filename += ".json"
+        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
+            filename += ".csv"
+        return filename
+
+    @staticmethod
+    def write_file(filename, fmt, csv_keys, data, details=None):
+        """
+            Writes content to the given file using the given format.
+
+            The key mapping must be a dict of keys or lists of keys to ensure proper mapping.
+
+            :param filename: the path of the file
+            :param fmt: the format of the file
+            :param csv_keys: the key mapping
+            :param data: the actual data to export
+            :param details: the details keys to look for
+        """
+        with open(filename, "w", encoding="utf-8") as f:
+            if fmt == Exporter.JSON:
+                # The JSON format is straightforward, we dump the flattened objects to JSON
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            else:
+                # The CSV format requires some work, to select the most relevant information
+                fieldnames = csv_keys.keys()
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+                w.writeheader()
+                for el in data:
+                    el_csv = {}
+                    for key in csv_keys:
+                        # First we look for the key specified by csv_keys and select the corresponding leaf
+                        k = csv_keys[key]
+                        selected = None
+                        last_key = None
+                        if type(k) is str:
+                            last_key = k
+                            k = [k] 
+                        if k[0] in el.keys():
+                            selected = el[k[0]]
+                        else:
+                            el_csv[key] = ""
+                            continue
+                        if len(k) > 1:
+                            for subkey in k[1:]:
+                                if subkey in selected.keys():
+                                    selected = selected[subkey]
+                                    last_key = subkey
+                        # Once the leaf is selected, we verify if there is any kind of ID mapping and act accordingly
+                        if type(selected) is dict and 'id' in selected.keys() and 'details' in selected.keys() and last_key in details.keys():
+                            el_csv[key] = "%s (%d)" % (selected["details"][details[last_key]], selected["id"])
+                        elif type(selected) is not dict and type(selected) is not list:
+                            el_csv[key] = selected
+                        else:
+                            el_csv[key] = "unknown"
+                    # And we write the row
+                    w.writerow(el_csv)
+
+    @staticmethod
     def export_posts(posts, fmt, filename, tags_list=None, categories_list=None, users_list=None):
         """
-        Exports posts in specified format to specified file
-        param posts: the posts to export
-        param fmt: the export format (JSON or CSV)
-        param tags_list: a list of tags to associate them with tag ids
-        param categories_list: a list of categories to associate them with
-        category ids
-        param user_list: a list of users to associate them with author id
+            Exports posts in specified format to specified file
+
+            :param posts: the posts to export
+            :param fmt: the export format (JSON or CSV)
+            :param tags_list: a list of tags to associate them with tag ids
+            :param categories_list: a list of categories to associate them with
+            category ids
+            :param user_list: a list of users to associate them with author id
+            :return: the length of the list written to the file
         """
         exported_posts = Exporter.setup_export(posts, 
             [['title', 'rendered'], ['content', 'rendered'], ['excerpt', 'rendered']],
@@ -138,44 +223,32 @@ class Exporter:
                 'tags': tags_list,
             })
         
-        if filename[-5:] != ".json" and fmt == Exporter.JSON:
-            filename += ".json"
-        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
-            filename += ".csv"
-        with open(filename, "w", encoding="utf-8") as f:
-            if fmt == Exporter.JSON:
-                json.dump(exported_posts, f, ensure_ascii=False, indent=4)
-            else:
-                fieldnames = ['id', 'date', 'modified', 'status', 'link', 'title', 'author']
-                w = csv.DictWriter(f, fieldnames=fieldnames)
-
-                w.writeheader()
-                for p in exported_posts:
-                    csv_post = {
-                        'id': p['id'],
-                        'date': p['date'],
-                        'modified': p['modified'],
-                        'status': p['status'],
-                        'link': p['link'],
-                        'title': p['title']['rendered'],
-                    }
-                    if 'author' in p.keys() and type(p['author']) is dict and 'details' in p['author'].keys() and 'name' in p['author']['details'].keys():
-                        csv_post["author"] = p['author']['details']['name']
-                    elif 'author' in p.keys():
-                        csv_post["author"] = p['author']
-                    else:
-                        csv_post["author"] = "unknown"
-                    w.writerow(csv_post)
+        filename = Exporter.prepare_filename(filename, fmt)
+        csv_keys = {
+            'id': 'id',
+            'date': 'date',
+            'modified': 'modified',
+            'status': 'status',
+            'link': 'link',
+            'title': ['title', 'rendered'],
+            'author': 'author'
+        }
+        details = {
+            'author': 'name',
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_posts, details)
         return len(exported_posts)
 
     @staticmethod
     def export_categories(categories, fmt, filename, category_list=None):
         """
-        Exports categories in specified format to specified file
-        param categories: the categories to export
-        param fmt: the export format (JSON or CSV)
-        param filename: the path to the file to write
-        param category_list: the list of categories to be used as parents
+            Exports categories in specified format to specified file.
+
+            :param categories: the categories to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :param category_list: the list of categories to be used as parents
+            :return: the length of the list written to the file
         """
         exported_categories = Exporter.setup_export(categories, # TODO
             [],
@@ -183,104 +256,76 @@ class Exporter:
                 'parent': category_list,
             })
         
-        if filename[-5:] != ".json" and fmt == Exporter.JSON:
-            filename += ".json"
-        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
-            filename += ".csv"
-        with open(filename, "w", encoding="utf-8") as f:
-            if fmt == Exporter.JSON:
-                json.dump(exported_categories, f, ensure_ascii=False, indent=4)
-            else:
-                fieldnames = ['id', 'name', 'post_count', 'description', 'parent']
-                w = csv.DictWriter(f, fieldnames=fieldnames)
+        filename = Exporter.prepare_filename(filename, fmt)
 
-                w.writeheader()
-                for cat in exported_categories:
-                    csv_cat = {
-                        'id': cat['id'],
-                        'name': cat['name'],
-                        'post_count': cat['count'],
-                        'description': cat['description'],
-                        'parent': cat['parent'],
-                    }
-                    if 'parent' in cat.keys() and type(cat['parent']) is dict and 'details' in cat['parent'].keys() and 'name' in cat['parent']['details'].keys():
-                        csv_cat["parent"] = cat['parent']['details']['name']
-                    w.writerow(csv_cat)
+        csv_keys = {
+            'id': 'id',
+            'name': 'name',
+            'post_count': 'count',
+            'description': 'description',
+            'parent': 'parent'
+        }
+        details = {
+            'parent': 'name'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_categories, details)
         return len(exported_categories)
     
     @staticmethod
     def export_tags(tags, fmt, filename):
         """
-        Exports tags in specified format to specified file
-        param tags: the tags to export
-        param fmt: the export format (JSON or CSV)
-        param filename: the path to the file to write
+            Exports tags in specified format to specified file
+
+            :param tags: the tags to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :return: the length of the list written to the file
         """
-        if filename[-5:] != ".json" and fmt == Exporter.JSON:
-            filename += ".json"
-        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
-            filename += ".csv"
+        filename = Exporter.prepare_filename(filename, fmt)
         
         exported_tags = tags # It seems that no modification will be done for this one, so no deepcopy
-        with open(filename, "w", encoding="utf-8") as f:
-            if fmt == Exporter.JSON:
-                json.dump(exported_tags, f, ensure_ascii=False, indent=4)
-            else:
-                fieldnames = ['id', 'name', 'post_count', 'description']
-                w = csv.DictWriter(f, fieldnames=fieldnames)
-
-                w.writeheader()
-                for tag in exported_tags:
-                    csv_tag = {
-                        'id': tag['id'],
-                        'name': tag['name'],
-                        'post_count': tag['count'],
-                        'description': tag['description'],
-                    }
-                    w.writerow(csv_tag)
+        csv_keys = {
+            'id': 'id',
+            'name': 'name',
+            'post_count': 'post_count',
+            'description': 'description'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_tags)
         return len(exported_tags)
 
     @staticmethod
     def export_users(users, fmt, filename):
         """
-        Exports users in specified format to specified file
-        param users: the users to export
-        param fmt: the export format (JSON or CSV)
-        param filename: the path to the file to write
+            Exports users in specified format to specified file.
+
+            :param users: the users to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :return: the length of the list written to the file
         """
-        if filename[-5:] != ".json" and fmt == Exporter.JSON:
-            filename += ".json"
-        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
-            filename += ".csv"
+        filename = Exporter.prepare_filename(filename, fmt)
         
         exported_users = users # It seems that no modification will be done for this one, so no deepcopy
-        with open(filename, "w", encoding="utf-8") as f:
-            if fmt == Exporter.JSON:
-                json.dump(exported_users, f, ensure_ascii=False, indent=4)
-            else:
-                fieldnames = ['id', 'name', 'link', 'description']
-                w = csv.DictWriter(f, fieldnames=fieldnames)
-
-                w.writeheader()
-                for user in exported_users:
-                    csv_user = {
-                        'id': user['id'],
-                        'name': user['name'],
-                        'link': user['link'],
-                        'description': user['description'],
-                    }
-                    w.writerow(csv_user)
+        csv_keys = {
+            'id': 'id',
+            'name': 'name', 
+            'link': 'link', 
+            'description': 'description'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_users)
         return len(exported_users)
 
     @staticmethod
     def export_pages(pages, fmt, filename, parent_pages=None, users=None):
         """
-        Exports pages in specified format to specified file
-        param pages: the pages to export
-        param fmt: the export format (JSON or CSV)
-        param filename: the path to the file to write
-        param parent_pages: the list of all cached pages, to get parents
-        param users: the list of all cached users, to get users
+            Exports pages in specified format to specified file.
+        
+            :param pages: the pages to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :param parent_pages: the list of all cached pages, to get parents
+            :param users: the list of all cached users, to get users
+            :return: the length of the list written to the file
         """
         exported_pages = Exporter.setup_export(pages,
             [["guid", "rendered"], ["title", "rendered"], ["content", "rendered"], ["excerpt", "rendered"]],
@@ -289,44 +334,32 @@ class Exporter:
                 'author': users,
             })
         
-        if filename[-5:] != ".json" and fmt == Exporter.JSON:
-            filename += ".json"
-        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
-            filename += ".csv"
-
-        with open(filename, "w", encoding="utf-8") as f:
-            if fmt == Exporter.JSON:
-                json.dump(exported_pages, f, ensure_ascii=False, indent=4)
-            else:
-                fieldnames = ['id', 'title', 'date', 'modified', 'status', 'link', 'author', 'protected']
-                w = csv.DictWriter(f, fieldnames=fieldnames)
-
-                w.writeheader()
-                for page in exported_pages:
-                    csv_page = {
-                        'id': page['id'],
-                        'date': page['date'],
-                        'modified': page['modified'],
-                        'status': page['status'],
-                        'link': page['link'],
-                        'title': page['title']['rendered'],
-                        'protected': page['content']['protected'],
-                    }
-                    if 'author' in page.keys() and page['author'] is dict and 'details' in page['author'].keys() and 'name' in page['author']['details'].keys():
-                        csv_page['author'] = page['author']['details']['name']
-                    else:
-                        csv_page['author'] = page['author']
-                    w.writerow(csv_page)
+        filename = Exporter.prepare_filename(filename, fmt)
+        csv_keys = {
+            'id': 'id',
+            'title': ['title', 'rendered'],
+            'date': 'date',
+            'modified': 'modified',
+            'status': 'status',
+            'link': 'link',
+            'author': 'author',
+            'protected': ['content', 'protected']
+        }
+        details = {
+            'author': 'name'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_pages, details)
         return len(exported_pages)
 
     @staticmethod
     def export_media(media, fmt, filename, users=None):
         """
-        Exports posts in specified format to specified file
-        param media: the media to export
-        param fmt: the export format (JSON or CSV)
-        param users: a list of users to associate them with
-        author ids
+            Exports media in specified format to specified file.
+
+            :param media: the media to export
+            :param fmt: the export format (JSON or CSV)
+            :param users: a list of users to associate them with author ids
+            :return: the length of the list written to the file
         """
         exported_media = Exporter.setup_export(media, 
             [
@@ -339,47 +372,35 @@ class Exporter:
                 'author': users,
             })
         
-        if filename[-5:] != ".json" and fmt == Exporter.JSON:
-            filename += ".json"
-        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
-            filename += ".csv"
-        with open(filename, "w", encoding="utf-8") as f:
-            if fmt == Exporter.JSON:
-                json.dump(exported_media, f, ensure_ascii=False, indent=4)
-            else:
-                fieldnames = ['id', 'date', 'modified', 'status', 'link', 'title', 'author', 'media_type']
-                w = csv.DictWriter(f, fieldnames=fieldnames)
-
-                w.writeheader()
-                for m in exported_media:
-                    csv_media = {
-                        'id': m['id'],
-                        'date': m['date'],
-                        'modified': m['modified'],
-                        'status': m['status'],
-                        'link': m['link'],
-                        'title': m['title']['rendered'],
-                        'media_type': m['media_type']
-                    }
-                    if 'author' in m.keys() and type(m['author']) is dict and 'details' in m['author'].keys() and 'name' in m['author']['details'].keys():
-                        csv_media["author"] = m['author']['details']['name']
-                    elif 'author' in m.keys():
-                        csv_media["author"] = m['author']
-                    else:
-                        csv_media["author"] = "unknown"
-                    w.writerow(csv_media)
+        filename = Exporter.prepare_filename(filename, fmt)
+        csv_keys = {
+            'id': 'id',
+            'title': ['title', 'rendered'],
+            'date': 'date',
+            'modified': 'modified',
+            'status': 'status',
+            'link': 'link',
+            'author': 'author',
+            'media_type': 'media_type'
+        }
+        details = {
+            'author': 'name'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_media, details)
         return len(exported_media)
 
     # FIXME to be refactored
     @staticmethod
     def export_comments_interactive(comments, fmt, filename, parent_posts=None, users=None):
         """
-        Exports comments in specified format to specified file
-        param comments: the comments to export
-        param fmt: the export format (JSON or CSV)
-        param filename: the path to the file to write
-        param parent_posts: the list of all cached posts, to get parent posts (not used yet because this could be too verbose)
-        param users: the list of all cached users, to get users
+            Exports comments in specified format to specified file.
+
+            :param comments: the comments to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :param parent_posts: the list of all cached posts, to get parent posts (not used yet because this could be too verbose)
+            :param users: the list of all cached users, to get users
+            :return: the length of the list written to the file
         """
         exported_comments = Exporter.setup_export(comments,
             [["content", "rendered"]],
@@ -388,48 +409,35 @@ class Exporter:
                 'author': users,
             })
         
-        if filename[-5:] != ".json" and fmt == Exporter.JSON:
-            filename += ".json"
-        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
-            filename += ".csv"
-
-        with open(filename, "w", encoding="utf-8") as f:
-            if fmt == Exporter.JSON:
-                json.dump(exported_comments, f, ensure_ascii=False, indent=4)
-            else:
-                fieldnames = ['id', 'post', 'date', 'status', 'link', 'author']
-                w = csv.DictWriter(f, fieldnames=fieldnames)
-
-                w.writeheader()
-                for comment in exported_comments:
-                    csv_comment = {
-                        'id': comment['id'],
-                        'date': comment['date'],
-                        'status': comment['status'],
-                        'link': comment['link'],
-                    }
-                    if 'author' in comment.keys() and comment['author'] is dict and 'details' in comment['author'].keys() and 'name' in comment['author']['details'].keys():
-                        csv_comment['author'] = "%s (%d)" % (comment['author']['details']['name'], comment['author']['id'])
-                    else:
-                        csv_comment['author'] = comment['author_name']
-                    if 'post' in comment.keys() and comment['post'] is dict and 'details' in comment['post'].keys() and 'title' in comment['post']['details'].keys():
-                        csv_comment['post'] = comment['post']['details']['title']['rendered']
-                    else:
-                        csv_comment['post'] = comment['post']
-                    w.writerow(csv_comment)
+        # FIXME replacing the post ID by the post title in CSV mode doesn't work yet (nested keys)
+        filename = Exporter.prepare_filename(filename, fmt)
+        csv_keys = {
+            'id': 'id',
+            'post': 'post',
+            'date': 'date',
+            'status': 'status',
+            'link': 'link',
+            'author': 'author_name',
+        }
+        details = {
+            'post': ['title', 'rendered'] 
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_comments, details)
         return len(exported_comments)
 
+    # TODO deprecated, to be moved to export_posts when HTML will be supported
     @staticmethod
     def export_posts_html(posts, folder, tags_list=None, categories_list=None,
     users_list=None):
         """
-        Exports posts as HTML to specified export folder. TODO deprecated, to be moved to export_posts
-        param posts: the posts to export
-        param folder: the export folder
-        param tags_list: a list of tags to associate them with tag ids
-        param categories_list: a list of categories to associate them with
-        category ids
-        param user_list: a list of users to associate them with author id
+            Exports posts as HTML to specified export folder.
+        
+            :param posts: the posts to export
+            :param folder: the export folder
+            :param tags_list: a list of tags to associate them with tag ids
+            :param categories_list: a list of categories to associate them with category ids
+            :param user_list: a list of users to associate them with author id
+            :return: the length of the list written to the file
         """
         exported_posts = 0
 
