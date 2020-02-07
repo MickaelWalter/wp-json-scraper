@@ -336,7 +336,7 @@ class WPApi:
         self.users = self.update_cache(self.users, users, total_entries, start, num)
         return users
 
-    def get_all_media(self):
+    def get_media(self, start=None, num=None, force=False):
         """
         Retrieves all media objects
         """
@@ -344,11 +344,14 @@ class WPApi:
             self.get_basic_info()
         if not self.has_v2:
             raise WordPressApiNotV2
-        if self.media is not None:
-            return self.media
+        if self.media is not None and not force:
+            media = self.get_from_cache(self.media, start, num)
+            if media is not None:
+                return media
 
-        self.media = self.crawl_pages('wp/v2/media?page=%d')[0]
-        return self.media
+        media, total_entries = self.crawl_pages('wp/v2/media?page=%d')
+        self.media = self.update_cache(self.media, media, total_entries, start, num)
+        return media
 
     def get_pages(self, start=None, num=None, force=False):
         """

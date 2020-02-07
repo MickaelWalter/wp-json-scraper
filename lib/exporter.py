@@ -319,6 +319,57 @@ class Exporter:
                     w.writerow(csv_page)
         return len(exported_pages)
 
+    @staticmethod
+    def export_media(media, fmt, filename, users=None):
+        """
+        Exports posts in specified format to specified file
+        param media: the media to export
+        param fmt: the export format (JSON or CSV)
+        param users: a list of users to associate them with
+        author ids
+        """
+        exported_media = Exporter.setup_export(media, 
+            [
+                ['guid', 'rendered'],
+                ['title', 'rendered'],
+                ['description', 'rendered'],
+                ['caption', 'rendered'],
+            ],
+            {
+                'author': users,
+            })
+        
+        if filename[-5:] != ".json" and fmt == Exporter.JSON:
+            filename += ".json"
+        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
+            filename += ".csv"
+        with open(filename, "w", encoding="utf-8") as f:
+            if fmt == Exporter.JSON:
+                json.dump(exported_media, f, ensure_ascii=False, indent=4)
+            else:
+                fieldnames = ['id', 'date', 'modified', 'status', 'link', 'title', 'author', 'media_type']
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+
+                w.writeheader()
+                for m in exported_media:
+                    csv_media = {
+                        'id': m['id'],
+                        'date': m['date'],
+                        'modified': m['modified'],
+                        'status': m['status'],
+                        'link': m['link'],
+                        'title': m['title']['rendered'],
+                        'media_type': m['media_type']
+                    }
+                    if 'author' in m.keys() and type(m['author']) is dict and 'details' in m['author'].keys() and 'name' in m['author']['details'].keys():
+                        csv_media["author"] = m['author']['details']['name']
+                    elif 'author' in m.keys():
+                        csv_media["author"] = m['author']
+                    else:
+                        csv_media["author"] = "unknown"
+                    w.writerow(csv_media)
+        return len(exported_media)
+
     # FIXME to be refactored
     @staticmethod
     def export_comments_interactive(comments, fmt, filename, parent_posts=None, users=None):

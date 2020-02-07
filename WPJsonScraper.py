@@ -299,7 +299,7 @@ license, check LICENSE.txt for more information""")
     if args.media or args.all:
         try:
             Console.log_info("Media list")
-            media_list = scanner.get_all_media()
+            media_list = scanner.get_media()
             InfoDisplayer.display_media(media_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")

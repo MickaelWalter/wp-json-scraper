@@ -280,26 +280,27 @@ class InfoDisplayer:
         print()
         date_format = "%Y-%m-%dT%H:%M:%S-%Z"
         for media in information:
-            line = ""
-            if 'id' in media.keys():
-                line += "Media ID: %d\n" % media['id']
-            if 'title' in media.keys() and 'rendered' in media['title']:
-                line += "    Media title: %s\n" % \
-                        html.unescape(media['title']['rendered'])
-            if 'date_gmt' in media.keys():
-                date_gmt = datetime.strptime(media['date_gmt'] +
-                                             "-GMT", date_format)
-                line += "    Upload date (GMT): %s\n" % \
-                        date_gmt.strftime("%d/%m/%Y %H:%M:%S")
-            if 'media_type' in media.keys():
-                line += "    Media type: %s\n" % media['media_type']
-            if 'mime_type' in media.keys():
-                line += "    Mime type: %s\n" % media['mime_type']
-            if 'link' in media.keys():
-                line += "    Page: %s\n" % media['link']
-            if 'source_url' in media.keys():
-                line += "    Source URL: %s\n" % media['source_url']
-            print(line)
+            if media is not None:
+                line = ""
+                if 'id' in media.keys():
+                    line += "Media ID: %d\n" % media['id']
+                if 'title' in media.keys() and 'rendered' in media['title']:
+                    line += "    Media title: %s\n" % \
+                            html.unescape(media['title']['rendered'])
+                if 'date_gmt' in media.keys():
+                    date_gmt = datetime.strptime(media['date_gmt'] +
+                                                "-GMT", date_format)
+                    line += "    Upload date (GMT): %s\n" % \
+                            date_gmt.strftime("%d/%m/%Y %H:%M:%S")
+                if 'media_type' in media.keys():
+                    line += "    Media type: %s\n" % media['media_type']
+                if 'mime_type' in media.keys():
+                    line += "    Mime type: %s\n" % media['mime_type']
+                if 'link' in media.keys():
+                    line += "    Page: %s\n" % media['link']
+                if 'source_url' in media.keys():
+                    line += "    Source URL: %s\n" % media['source_url']
+                print(line)
         print()
 
     @staticmethod
