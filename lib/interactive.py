@@ -79,6 +79,25 @@ class InteractiveShell(cmd.Cmd):
         self.version = version
         self.scanner = WPApi(self.target, session=session)
 
+    @staticmethod
+    def export_decorator(export_func, is_all, export_str, json, csv, values, kwargs = {}):
+        if json is not None:
+            json_file = json
+            if is_all:
+                json_file = json + "-" + export_str
+            args = [values]
+            args.append(Exporter.JSON)
+            args.append(json_file)
+            export_func(*args, **kwargs)
+        if csv is not None:
+            csv_file = csv
+            if is_all:
+                csv_file = csv + "-" + export_str
+            args = [values]
+            args.append(Exporter.CSV)
+            args.append(csv_file)
+            export_func(*args, **kwargs)
+    
     def do_exit(self, arg):
         'Exit wp-json-scraper'
         return True
@@ -190,16 +209,7 @@ class InteractiveShell(cmd.Cmd):
             try:
                 users = self.scanner.get_users(start=args.start, num=args.limit, force=not args.cache)
                 InfoDisplayer.display_users(users)
-                if args.json is not None:
-                    json_file = args.json
-                    if args.what == "all":
-                        json_file = args.json + "-users"
-                    Exporter.export_users(users, Exporter.JSON, json_file)
-                if args.csv is not None:
-                    csv_file = args.csv
-                    if args.what == "all":
-                        csv_file = args.csv + "-users"
-                    Exporter.export_users(users, Exporter.CSV, csv_file)
+                InteractiveShell.export_decorator(Exporter.export_users, args.what == "all", "users", args.json, args.csv, users)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -210,16 +220,7 @@ class InteractiveShell(cmd.Cmd):
             try:
                 tags = self.scanner.get_tags(start=args.start, num=args.limit, force=not args.cache)
                 InfoDisplayer.display_tags(tags)
-                if args.json is not None:
-                    json_file = args.json
-                    if args.what == "all":
-                        json_file = args.json + "-tags"
-                    Exporter.export_tags(tags, Exporter.JSON, json_file)
-                if args.csv is not None:
-                    csv_file = args.csv
-                    if args.what == "all":
-                        csv_file = args.csv + "-tags"
-                    Exporter.export_tags(tags, Exporter.CSV, csv_file)
+                InteractiveShell.export_decorator(Exporter.export_tags, args.what == "all", "tags", args.json, args.csv, tags)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -230,16 +231,8 @@ class InteractiveShell(cmd.Cmd):
             try:
                 categories = self.scanner.get_categories(start=args.start, num=args.limit, force=not args.cache)
                 InfoDisplayer.display_categories(categories)
-                if args.json is not None:
-                    json_file = args.json
-                    if args.what == "all":
-                        json_file = args.json + "-categories"
-                    Exporter.export_categories(categories, Exporter.JSON, json_file, self.scanner.categories)
-                if args.csv is not None:
-                    csv_file = args.csv
-                    if args.what == "all":
-                        csv_file = args.csv + "-categories"
-                    Exporter.export_categories(categories, Exporter.CSV, csv_file, self.scanner.categories)
+                InteractiveShell.export_decorator(Exporter.export_categories, args.what == "all", "categories", args.json, args.csv, 
+                    categories, {'category_list': self.scanner.categories})
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -251,23 +244,14 @@ class InteractiveShell(cmd.Cmd):
                 posts = self.scanner.get_posts(comments=False, start=args.start, num=args.limit, force=not args.cache)
                 Console.log_success("Got %d entries" % len(posts))
                 InfoDisplayer.display_posts(posts)
-                if args.json is not None:
-                    json_file = args.json
-                    if args.what == "all":
-                        json_file = args.json + "-posts"
-                    Exporter.export_posts(posts, Exporter.JSON, json_file, 
-                     self.scanner.tags,
-                     self.scanner.categories,
-                     self.scanner.users
-                     )
-                if args.csv is not None:
-                    csv_file = args.csv
-                    if args.what == "all":
-                        csv_file = args.csv + "-posts"
-                    Exporter.export_posts(posts, Exporter.CSV, csv_file,
-                     self.scanner.tags,
-                     self.scanner.categories,
-                     self.scanner.users)
+                InteractiveShell.export_decorator(Exporter.export_posts, args.what == "all", "posts", args.json, args.csv, 
+                    posts, 
+                    {
+                        'tags_list': self.scanner.tags,
+                        'categories_list': self.scanner.categories,
+                        'users_list': self.scanner.users
+                    }
+                )
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -278,22 +262,13 @@ class InteractiveShell(cmd.Cmd):
             try:
                 pages = self.scanner.get_pages(start=args.start, num=args.limit, force=not args.cache)
                 InfoDisplayer.display_pages(pages)
-                if args.json is not None:
-                    json_file = args.json
-                    if args.what == "all":
-                        json_file = args.json + "-pages"
-                    Exporter.export_pages(pages, Exporter.JSON, json_file, 
-                     self.scanner.pages,
-                     self.scanner.users
-                     )
-                if args.csv is not None:
-                    csv_file = args.csv
-                    if args.what == "all":
-                        csv_file = args.csv + "-pages"
-                    Exporter.export_pages(pages, Exporter.CSV, csv_file,
-                     self.scanner.pages,
-                     self.scanner.users
-                     )
+                InteractiveShell.export_decorator(Exporter.export_pages, args.what == "all", "pages", args.json, args.csv, 
+                    pages, 
+                    {
+                        'parent_pages': self.scanner.pages,
+                        'users': self.scanner.users
+                    }
+                )
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -304,22 +279,13 @@ class InteractiveShell(cmd.Cmd):
             try:
                 comments = self.scanner.get_comments(start=args.start, num=args.limit, force=not args.cache)
                 InfoDisplayer.display_comments(comments)
-                if args.json is not None:
-                    json_file = args.json
-                    if args.what == "all":
-                        json_file = args.json + "-comments"
-                    Exporter.export_comments_interactive(comments, Exporter.JSON, json_file, 
-                     #self.scanner.posts, # May be too verbose
-                     users=self.scanner.users
-                     )
-                if args.csv is not None:
-                    csv_file = args.csv
-                    if args.what == "all":
-                        csv_file = args.csv + "-comments"
-                    Exporter.export_comments_interactive(comments, Exporter.CSV, csv_file,
-                     #self.scanner.posts,
-                     users=self.scanner.users
-                     )
+                InteractiveShell.export_decorator(Exporter.export_comments_interactive, args.what == "all", "comments", args.json, 
+                    args.csv, comments, 
+                    {
+                        #'parent_posts': self.scanner.posts, # May be too verbose
+                        'users': self.scanner.users
+                    }
+                )
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -330,16 +296,12 @@ class InteractiveShell(cmd.Cmd):
             try:
                 media = self.scanner.get_media(start=args.start, num=args.limit, force=not args.cache)
                 InfoDisplayer.display_media(media)
-                if args.json is not None:
-                    json_file = args.json
-                    if args.what == "all":
-                        json_file = args.json + "-media"
-                    Exporter.export_media(media, Exporter.JSON, json_file, users=self.scanner.users)
-                if args.csv is not None:
-                    csv_file = args.csv
-                    if args.what == "all":
-                        csv_file = args.csv + "-media"
-                    Exporter.export_media(media, Exporter.CSV, csv_file, users=self.scanner.users)
+                InteractiveShell.export_decorator(Exporter.export_media, args.what == "all", "media", args.json, 
+                    args.csv, media, 
+                    {
+                        'users': self.scanner.users
+                    }
+                )
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
