@@ -308,6 +308,41 @@ class InteractiveShell(cmd.Cmd):
                 Console.log_error("Could not open %s for writing" % e.filename)
             print()
 
+    def do_fetch(self, arg):
+        'Fetches a specific content specified by ID'
+        parser = ArgumentParser(prog='fetch', description='fetches something from the server or the cache by ID')
+        parser.add_argument("what", choices=[
+            'post', 
+            #'post-revision', 
+            #'wp-block', 
+            'category',
+            'tag',
+            'page',
+            'comment',
+            'media',
+            'user',
+            #'theme',
+            #'search-result',
+            ],
+            help='what to fetch')
+        parser.add_argument("id", type=int, help='the ID of the content to fetch')
+        parser.add_argument("--json", "-j", help="list and store as json to the specified file")
+        parser.add_argument("--csv", "-c", help="list and store as csv to the specified file")
+        parser.add_argument("--no-cache", dest="cache", action="store_false", help="don't lookup in cache and ask the server")
+        args = parser.custom_parse_args(arg)
+        if args is None:
+            return
+        if args.what == "user":
+            print("Users list")
+            try:
+                user = self.scanner.get_obj_by_id(WPApi.USER, args.id, use_cache=args.cache)
+                InfoDisplayer.display_users(user)
+                InteractiveShell.export_decorator(Exporter.export_users, False, "", args.json, args.csv, user)
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
+            print()
 
 def start_interactive(target, session, version):
     """

@@ -30,12 +30,55 @@ from json.decoder import JSONDecodeError
 from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
                             NSNotFoundException
 from lib.requestsession import RequestSession, HTTPError400
-from lib.utils import url_path_join, print_progress_bar, get_content_as_json
+from lib.utils import url_path_join, print_progress_bar, get_content_as_json, get_by_id
 
 class WPApi:
     """
     Queries the WordPress API to retrieve information
     """
+
+    # Object types
+    POST = 0
+    """
+        The post type
+    """
+    POST_REVISION = 1
+    """
+        The post revision type
+    """
+    WP_BLOCK = 2
+    """
+        The Gutenberg block type
+    """
+    CATEGORY = 3
+    """
+        The category type
+    """
+    TAG = 4
+    """
+        The tag type
+    """
+    PAGE = 5
+    """
+        The page type
+    """
+    COMMENT = 6
+    """
+        The comment type
+    """
+    MEDIA = 7
+    """
+        The media type
+    """
+    USER = 8
+    """
+        The user type
+    """
+    THEME = 9
+    """
+        The theme type
+    """
+    #SEARCH_RESULT = 10
 
     def __init__(self, target, api_path="wp-json/", session=None,
                  search_terms=None):
@@ -181,6 +224,25 @@ class WPApi:
             page += 1
 
         return (entries, total_entries)
+    
+    def crawl_single_page(self, url):
+        """
+            Crawls a single URL
+        """
+        content = None
+        rest_url = url_path_join(self.url, self.api_path, url)
+        try:
+            req = self.s.get(rest_url)
+        except HTTPError400:
+            return None
+        except Exception:
+            raise WordPressApiNotV2
+        try:
+            content = get_content_as_json(req)
+        except JSONDecodeError:
+            pass
+
+        return content
 
     def get_from_cache(self, cache, start=None, num=None):
         """
@@ -425,3 +487,26 @@ class WPApi:
                     except Exception:
                         continue
         return ns_data
+
+    def get_obj_by_id_helper(self, cache, obj_id, url, use_cache=True):
+        if use_cache and cache is not None:
+            obj = get_by_id(cache, obj_id)
+            if obj is not None:
+                return [obj]
+        obj = self.crawl_single_page(url % obj_id)
+        if type(obj) is dict:
+            return [obj]
+    
+    def get_obj_by_id(self, obj_type, obj_id, use_cache=True):
+        """
+            Returns a list of maximum one object specified by its type and ID.
+
+            Also returns an empty list if the ID does not exist.
+
+            :param obj_type: the type of the object (ex. POST)
+            :param obj_id: the ID of the object to fetch
+            :param use_cache: if the cache should be used to avoid useless requests
+        """
+        if obj_type == WPApi.USER:
+            return self.get_obj_by_id_helper(self.users, obj_id, 'wp/v2/users/%d', use_cache)
+        return []

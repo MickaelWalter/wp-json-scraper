@@ -42,7 +42,7 @@ Sets a specific global parameter.
 Note that in cases of proxy and cookies, the command updates the entries. 
 Check the resulting parameter with show if you don't know what that means.
 
-*Note:* changing the target resets the cache but keeps proxies, cookies and authorization headers. Be aware 
+**Note:** changing the target resets the cache but keeps proxies, cookies and authorization headers. Be aware 
 of data leakage risks. If you need to keep things apart between targets, relaunch WPJsonScraper or make sure 
 all is correctly set up with the `show all` command.
 
@@ -88,3 +88,23 @@ Example 2: get maximum 10 pages starting at page 15
 Example 3: export all listeable content to json files (including for example all-data-posts.json)
 
     list all --json all-data
+
+### fetch
+
+Fetches a specific piece of data from the server given its type and its ID. By default, if the data is cached, 
+the data is returned from the cache. Use the --no-cache argument to force its retrieval from the server.
+
+The data displayed is more complete than the data displayed by the list command. But some metadata is still not 
+displayed. Only the JSON export is a full data dump (with additional mapping when relevant).
+
+**Note:** like in the list function, the data that could complete the displayed information is not automatically 
+fetched. You have to get it into cache first or to fetch it separately based on its ID. But the data fetched from 
+the server is cached if relevant.
+
+Example 1 : display the post with the ID 1
+
+    fetch post 1
+
+Example 2 : display the page with the ID 42 and export it in a JSON file, don't use the cache
+
+    fetch page 42 --no-cache
