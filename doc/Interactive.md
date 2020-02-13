@@ -98,8 +98,8 @@ The data displayed is more complete than the data displayed by the list command.
 displayed. Only the JSON export is a full data dump (with additional mapping when relevant).
 
 **Note:** like in the list function, the data that could complete the displayed information is not automatically 
-fetched. You have to get it into cache first or to fetch it separately based on its ID. But the data fetched from 
-the server is cached if relevant.
+fetched. You have to get it into cache first or to fetch it separately based on its ID. Moreover, the data 
+retrieved by ID is not yet pushed into the cache. It may be in a later version.
 
 Example 1 : display the post with the ID 1
 

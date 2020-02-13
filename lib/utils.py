@@ -31,6 +31,8 @@ def get_by_id(value, id):
     param value: the dict to process
     param id: the id to get
     """
+    if value is None:
+        return None
     for val in value:
         if 'id' in val.keys() and val['id'] == id:
             return val

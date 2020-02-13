@@ -29,7 +29,7 @@ from json.decoder import JSONDecodeError
 
 from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
                             NSNotFoundException
-from lib.requestsession import RequestSession, HTTPError400
+from lib.requestsession import RequestSession, HTTPError400, HTTPError404
 from lib.utils import url_path_join, print_progress_bar, get_content_as_json, get_by_id
 
 class WPApi:
@@ -234,6 +234,8 @@ class WPApi:
         try:
             req = self.s.get(rest_url)
         except HTTPError400:
+            return None
+        except HTTPError404:
             return None
         except Exception:
             raise WordPressApiNotV2
@@ -496,6 +498,7 @@ class WPApi:
         obj = self.crawl_single_page(url % obj_id)
         if type(obj) is dict:
             return [obj]
+        return []
     
     def get_obj_by_id(self, obj_type, obj_id, use_cache=True):
         """
@@ -509,4 +512,8 @@ class WPApi:
         """
         if obj_type == WPApi.USER:
             return self.get_obj_by_id_helper(self.users, obj_id, 'wp/v2/users/%d', use_cache)
+        if obj_type == WPApi.TAG:
+            return self.get_obj_by_id_helper(self.tags, obj_id, 'wp/v2/tags/%d', use_cache)
+        if obj_type == WPApi.CATEGORY:
+            return self.get_obj_by_id_helper(self.categories, obj_id, 'wp/v2/categories/%d', use_cache)
         return []

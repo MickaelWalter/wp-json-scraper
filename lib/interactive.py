@@ -25,12 +25,14 @@ import argparse
 import shlex
 import sys
 import re
+import copy
 
 from lib.wpapi import WPApi, WordPressApiNotV2
 from lib.requestsession import RequestSession
 from lib.console import Console
 from lib.infodisplayer import InfoDisplayer
 from lib.exporter import Exporter
+from lib.utils import get_by_id
 
 class ArgumentParser(argparse.ArgumentParser):
     """
@@ -333,11 +335,48 @@ class InteractiveShell(cmd.Cmd):
         if args is None:
             return
         if args.what == "user":
-            print("Users list")
+            print("User details")
             try:
                 user = self.scanner.get_obj_by_id(WPApi.USER, args.id, use_cache=args.cache)
-                InfoDisplayer.display_users(user)
+                if len(user) == 0:
+                    Console.log_info("User not found\n")
+                else:
+                    InfoDisplayer.display_users(user, True)
                 InteractiveShell.export_decorator(Exporter.export_users, False, "", args.json, args.csv, user)
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
+            print()
+        elif args.what == "tag":
+            print("Tag details")
+            try:
+                tag = self.scanner.get_obj_by_id(WPApi.TAG, args.id, use_cache=args.cache)
+                if len(tag) == 0:
+                    Console.log_info("Tag not found\n")
+                else:
+                    InfoDisplayer.display_tags(tag, True)
+                InteractiveShell.export_decorator(Exporter.export_tags, False, "", args.json, args.csv, tag)
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
+            print()
+        elif args.what == "category":
+            print("Category details")
+            try:
+                category = self.scanner.get_obj_by_id(WPApi.CATEGORY, args.id, use_cache=args.cache)
+                if len(category) == 0:
+                    Console.log_info("Category not found\n")
+                else:
+                    if 'parent' in category[0].keys():
+                        obj = get_by_id(self.scanner.categories, category[0]['parent'])
+                        if obj is not None and 'name' in obj.keys():
+                            category[0] = copy.deepcopy(category[0])
+                            category[0]['parent'] = "%s (%d)" % (obj['name'], category[0]['parent'])
+
+                    InfoDisplayer.display_categories(category, True)
+                InteractiveShell.export_decorator(Exporter.export_categories, False, "", args.json, args.csv, category)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:

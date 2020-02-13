@@ -201,10 +201,12 @@ class InfoDisplayer:
         print()
 
     @staticmethod
-    def display_users(information):
+    def display_users(information, details=False):
         """
-        Displays users on the WordPress instance
-        param information: information as a JSON object
+            Displays users on the WordPress instance
+
+            :param information: information as a JSON object
+            :param details: display more details about the user
         """
         print()
         for user in information:
@@ -222,11 +224,16 @@ class InfoDisplayer:
                     line += "    User website: %s\n" % user['url']
                 if 'link' in user.keys():
                     line += "    User personal page: %s\n" % user['link']
+                if details:
+                    if "avatar_urls" in user.keys() and type(user["avatar_urls"]) is dict and len(user["avatar_urls"].keys()) > 0:
+                        line += "    Avatars: \n"
+                        for key, value in user["avatar_urls"].items():
+                            line += "        * %s: %s\n" % (key, value)
                 print(line)
         print()
 
     @staticmethod
-    def display_categories(information):
+    def display_categories(information, details=False):
         """
         Displays categories of the WordPress instance
         param information: information as a JSON object
@@ -245,11 +252,25 @@ class InfoDisplayer:
                     line += "    Number of posts: %d\n" % category['count']
                 if 'link' in category.keys():
                     line += "    Page: %s\n" % category['link']
+                if details:
+                    if 'slug' in category.keys():
+                        line += "    Slug: %s\n" % category['slug']
+                    if 'taxonomy' in category.keys():
+                        line += "    Taxonomy: %s\n" % category['slug']
+                    if 'parent' in category.keys():
+                        line += "    Parent category: "
+                        if type(category['parent']) is str:
+                            line += category['parent']
+                        elif type(category['parent']) is int:
+                            line += "%d" % category['parent']
+                        else:
+                            line += "Unknown"
+                        line += "\n"
                 print(line)
         print()
 
     @staticmethod
-    def display_tags(information):
+    def display_tags(information, details=False):
         """
         Displays tags of the WordPress instance
         param information: information as a JSON object
@@ -268,6 +289,11 @@ class InfoDisplayer:
                     line += "    Number of posts: %d\n" % tag['count']
                 if 'link' in tag.keys():
                     line += "    Page: %s\n" % tag['link']
+                if details:
+                    if 'slug' in tag.keys():
+                        line += "    Slug: %s\n" % tag['slug']
+                    if 'taxonomy' in tag.keys():
+                        line += "    Taxonomy: %s\n" % tag['slug']
                 print(line)
         print()
 
