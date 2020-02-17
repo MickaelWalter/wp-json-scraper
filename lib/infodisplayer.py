@@ -141,7 +141,7 @@ class InfoDisplayer:
             print()
 
     @staticmethod
-    def display_posts(information, orphan_comments=[]):
+    def display_posts(information, orphan_comments=[], details=False):
         """
         Displays posts published on the WordPress instance
         param information: information as a JSON object
@@ -162,6 +162,34 @@ class InfoDisplayer:
                             date_gmt.strftime("%d/%m/%Y at %H:%M:%S")
                 if 'link' in post.keys():
                     line += " - " + post['link']
+                if details:
+                    if 'slug' in post.keys():
+                        line += "\nSlug: " + post['slug']
+                    if 'status' in post.keys():
+                        line += "\nStatus: " + post['status']
+                    if 'author' in post.keys():
+                        line += "\nAuthor ID: %d" % post['author']
+                    if 'comment_status' in post.keys():
+                        line += "\nComment status: " + post['comment_status']
+                    if 'template' in post.keys() and len(post['template']) > 0:
+                        line += "\nTemplate: " + post['template']
+                    if 'categories' in post.keys() and len(post['categories']) > 0:
+                        line += "\nCategory IDs: "
+                        for cat in post['categories']:
+                            line += "%d, " % cat
+                        line = line[:-2]
+                    if 'excerpt' in post.keys():
+                        line += "\nExcerpt: "
+                        if 'protected' in post['excerpt'].keys() and post['excerpt']['protected']:
+                            line += "<post is protected>"
+                        elif 'rendered' in post['excerpt'].keys():
+                            line += "\n" + html.unescape(post['excerpt']['rendered'])
+                    if 'content' in post.keys():
+                        line += "\nContent: "
+                        if 'protected' in post['content'].keys() and post['content']['protected']:
+                            line += "<post is protected>"
+                        elif 'rendered' in post['content'].keys():
+                            line += "\n" + html.unescape(post['content']['rendered'])
                 if 'comments' in post.keys():
                     for comment in post['comments']:
                         line += "\n\t * Comment by %s from (%s) - %s" % (comment['author_name'], comment['author_url'], comment['link'])

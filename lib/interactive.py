@@ -356,7 +356,7 @@ class InteractiveShell(cmd.Cmd):
                     Console.log_info("Tag not found\n")
                 else:
                     InfoDisplayer.display_tags(tag, True)
-                InteractiveShell.export_decorator(Exporter.export_tags, False, "", args.json, args.csv, tag)
+                    InteractiveShell.export_decorator(Exporter.export_tags, False, "", args.json, args.csv, tag)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
@@ -376,12 +376,32 @@ class InteractiveShell(cmd.Cmd):
                             category[0]['parent'] = "%s (%d)" % (obj['name'], category[0]['parent'])
 
                     InfoDisplayer.display_categories(category, True)
-                InteractiveShell.export_decorator(Exporter.export_categories, False, "", args.json, args.csv, category)
+                    InteractiveShell.export_decorator(Exporter.export_categories, False, "", args.json, args.csv, category)
             except WordPressApiNotV2:
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
                 Console.log_error("Could not open %s for writing" % e.filename)
             print()
+        elif args.what == "post":
+            print("Post details")
+            try:
+                post = self.scanner.get_obj_by_id(WPApi.POST, args.id, use_cache=args.cache)
+                if len(post) == 0:
+                    Console.log_info("Post not found\n")
+                else:
+                    InfoDisplayer.display_posts(post, details=True)
+                    InteractiveShell.export_decorator(Exporter.export_posts, False, "", args.json, args.csv, 
+                        post, 
+                        {
+                            'tags_list': self.scanner.tags,
+                            'categories_list': self.scanner.categories,
+                            'users_list': self.scanner.users
+                        }
+                    )
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
 
 def start_interactive(target, session, version):
     """

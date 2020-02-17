@@ -516,4 +516,6 @@ class WPApi:
             return self.get_obj_by_id_helper(self.tags, obj_id, 'wp/v2/tags/%d', use_cache)
         if obj_type == WPApi.CATEGORY:
             return self.get_obj_by_id_helper(self.categories, obj_id, 'wp/v2/categories/%d', use_cache)
+        if obj_type == WPApi.POST:
+            return self.get_obj_by_id_helper(self.posts, obj_id, 'wp/v2/posts/%d', use_cache)
         return []
