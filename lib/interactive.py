@@ -402,6 +402,26 @@ class InteractiveShell(cmd.Cmd):
                 Console.log_error("The API does not support WP V2")
             except IOError as e:
                 Console.log_error("Could not open %s for writing" % e.filename)
+        elif args.what == "page":
+            print("Page details")
+            try:
+                page = self.scanner.get_obj_by_id(WPApi.PAGE, args.id, use_cache=args.cache)
+                if len(page) == 0:
+                    Console.log_info("Page not found\n")
+                else:
+                    InfoDisplayer.display_pages(page, details=True)
+                    InteractiveShell.export_decorator(Exporter.export_pages, False, "", args.json, args.csv, 
+                        page, 
+                        {
+                            'parent_pages': self.scanner.pages,
+                            'users': self.scanner.users
+                        }
+                    )
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
+            print()
 
 def start_interactive(target, session, version):
     """

@@ -358,10 +358,12 @@ class InfoDisplayer:
         print()
 
     @staticmethod
-    def display_pages(information):
+    def display_pages(information, details=False):
         """
-        Displays pages published on the WordPress instance
-        param information: information as a JSON object
+            Displays pages published on the WordPress instance
+
+            :param information: information as a JSON object
+            :param details: if the details should be displayed
         """
         print()
         for page in information:
@@ -373,6 +375,34 @@ class InfoDisplayer:
                     line += " - " + html.unescape(page['title']['rendered'])
                 if 'link' in page.keys():
                     line += " - " + page['link']
+                if details:
+                    if 'slug' in page.keys():
+                        line += "\nSlug: " + page['slug']
+                    if 'status' in page.keys():
+                        line += "\nStatus: " + page['status']
+                    if 'author' in page.keys():
+                        line += "\nAuthor ID: %d" % page['author']
+                    if 'comment_status' in page.keys():
+                        line += "\nComment status: " + page['comment_status']
+                    if 'template' in page.keys() and len(page['template']) > 0:
+                        line += "\nTemplate: " + page['template']
+                    if 'parent' in page.keys():
+                        if page['parent'] == 0:
+                            line += "\nParent: none"
+                        else:
+                            line += "\nParent ID: %d" % page['parent']
+                    if 'excerpt' in page.keys():
+                        line += "\nExcerpt: "
+                        if 'protected' in page['excerpt'].keys() and page['excerpt']['protected']:
+                            line += "<page is protected>"
+                        elif 'rendered' in page['excerpt'].keys():
+                            line += "\n" + html.unescape(page['excerpt']['rendered'])
+                    if 'content' in page.keys():
+                        line += "\nContent: "
+                        if 'protected' in page['content'].keys() and page['content']['protected']:
+                            line += "<page is protected>"
+                        elif 'rendered' in page['content'].keys():
+                            line += "\n" + html.unescape(page['content']['rendered'])
                 print(line)
         print()
 
