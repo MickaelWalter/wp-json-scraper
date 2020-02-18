@@ -449,10 +449,10 @@ class Exporter:
             post_file = None
             if 'slug' in post.keys():
                 post_file = open(os.path.join(folder, post['slug'])+".html",
-                "wt")
+                "wt", encoding="utf-8")
             else:
                 post_file = open(os.path.join(folder, str(post['id']))+".html",
-                "wt")
+                "wt", encoding="utf-8")
 
             title = "Unknown"
             if 'title' in post.keys() and 'rendered' in post['title'].keys():
@@ -634,7 +634,7 @@ class Exporter:
             os.mkdir(export_folder)
         if not os.path.isdir(os.path.join(export_folder, post)):
             os.mkdir(os.path.join(export_folder, post))
-        out_file = open(os.path.join(export_folder, post, "%04d.html" % comment['id']), "wt")
+        out_file = open(os.path.join(export_folder, post, "%04d.html" % comment['id']), "wt", encoding="utf-8")
         date_gmt = "Unknown"
         if 'date_gmt' in comment.keys():
             date_gmt = datetime.strptime(comment['date_gmt'] +
