@@ -519,5 +519,9 @@ class WPApi:
         if obj_type == WPApi.POST:
             return self.get_obj_by_id_helper(self.posts, obj_id, 'wp/v2/posts/%d', use_cache)
         if obj_type == WPApi.PAGE:
-            return self.get_obj_by_id_helper(self.posts, obj_id, 'wp/v2/pages/%d', use_cache)
+            return self.get_obj_by_id_helper(self.pages, obj_id, 'wp/v2/pages/%d', use_cache)
+        if obj_type == WPApi.COMMENT:
+            return self.get_obj_by_id_helper(self.comments, obj_id, 'wp/v2/comments/%d', use_cache)
+        if obj_type == WPApi.MEDIA:
+            return self.get_obj_by_id_helper(self.comments, obj_id, 'wp/v2/media/%d', use_cache)
         return []

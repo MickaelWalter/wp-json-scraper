@@ -422,6 +422,48 @@ class InteractiveShell(cmd.Cmd):
             except IOError as e:
                 Console.log_error("Could not open %s for writing" % e.filename)
             print()
+        elif args.what == "comment":
+            print("Comment details")
+            try:
+                comment = self.scanner.get_obj_by_id(WPApi.COMMENT, args.id, use_cache=args.cache)
+                if len(comment) == 0:
+                    Console.log_info("Comment not found\n")
+                else:
+                    InfoDisplayer.display_comments(comment, True)
+                    InteractiveShell.export_decorator(Exporter.export_comments_interactive, False, "", args.json, 
+                        args.csv, comment, 
+                        {
+                            #'parent_posts': self.scanner.posts, # May be too verbose
+                            'users': self.scanner.users
+                        }
+                    )
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
+            print()
+        elif args.what == "media":
+            print("Media details")
+            try:
+                media = self.scanner.get_obj_by_id(WPApi.MEDIA, args.id, use_cache=args.cache)
+                if len(media) == 0:
+                    Console.log_info("Media not found\n")
+                else:
+                    InfoDisplayer.display_media(media, details=True)
+                    InteractiveShell.export_decorator(Exporter.export_media, False, "", args.json, 
+                        args.csv, media, 
+                        {
+                            'users': self.scanner.users
+                        }
+                    )
+            except WordPressApiNotV2:
+                Console.log_error("The API does not support WP V2")
+            except IOError as e:
+                Console.log_error("Could not open %s for writing" % e.filename)
+            print()
+        else:
+            print("Not implemented")
+            print()
 
 def start_interactive(target, session, version):
     """

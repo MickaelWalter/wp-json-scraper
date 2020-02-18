@@ -204,10 +204,12 @@ class InfoDisplayer:
         print()
 
     @staticmethod
-    def display_comments(information):
+    def display_comments(information, details=False):
         """
-        Displays comments published on the WordPress instance
-        param information: information as a JSON object
+            Displays comments published on the WordPress instance.
+
+            :param information: information as a JSON object
+            :param details: if the details should be displayed
         """
         print()
         date_format = "%Y-%m-%dT%H:%M:%S-%Z"
@@ -225,6 +227,17 @@ class InfoDisplayer:
                                                 "-GMT", date_format)
                     line += " on %s" % \
                             date_gmt.strftime("%d/%m/%Y at %H:%M:%S")
+                if details:
+                    if 'parent' in comment.keys() and comment['parent'] != 0:
+                        line += "\nParent ID: " + comment['parent']
+                    if 'link' in comment.keys():
+                        line += "\nLink: " + comment['link']
+                    if 'status' in comment.keys():
+                        line += "\nStatus: " + comment['status']
+                    if 'author_url' in comment.keys() and len(comment['author_url']) > 0:
+                        line += "\nAuthor URL: " + comment['author_url']
+                    if 'content' in comment.keys():
+                        line += "\nContent: \n" + html.unescape(comment['content']['rendered'])
                 print(line)
         print()
 
@@ -326,10 +339,12 @@ class InfoDisplayer:
         print()
 
     @staticmethod
-    def display_media(information):
+    def display_media(information, details=False):
         """
-        Displays media objects of the WordPress instance
-        param information: information as a JSON object
+            Displays media objects of the WordPress instance
+
+            :param information: information as a JSON object
+            :param details: if the details should be displayed
         """
         print()
         date_format = "%Y-%m-%dT%H:%M:%S-%Z"
@@ -354,6 +369,25 @@ class InfoDisplayer:
                     line += "    Page: %s\n" % media['link']
                 if 'source_url' in media.keys():
                     line += "    Source URL: %s\n" % media['source_url']
+                if details:
+                    if 'slug' in media.keys():
+                        line += "Slug: " + media['slug'] + "\n"
+                    if 'status' in media.keys():
+                        line += "Status: " + media['status'] + "\n"
+                    if 'type' in media.keys():
+                        line += "Type: " + media['type'] + "\n"
+                    if 'author' in media.keys():
+                        line += "Author ID: %d\n" % media['author']
+                    if 'alt_text' in media.keys():
+                        line += "Alt text: " + media['alt_text'] + "\n"
+                    if 'comment_status' in media.keys():
+                        line += "Comment status: " + media['comment_status'] + "\n"
+                    if 'post' in media.keys():
+                        line += "Post or page ID: %d\n" % media['post']
+                    if 'description' in media.keys() and media['description']['rendered']:
+                        line += "Description: \n" + html.unescape(media['description']['rendered']) + "\n"
+                    if 'caption' in media.keys() and media['caption']['rendered']:
+                        line += "Caption: \n" + html.unescape(media['caption']['rendered']) + "\n"
                 print(line)
         print()
 
