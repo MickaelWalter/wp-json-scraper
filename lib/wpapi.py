@@ -525,3 +525,33 @@ class WPApi:
         if obj_type == WPApi.MEDIA:
             return self.get_obj_by_id_helper(self.comments, obj_id, 'wp/v2/media/%d', use_cache)
         return []
+    
+    def get_obj_list(self, obj_type, start, limit, cache, kwargs={}):
+        """
+            Returns a list of maximum limit objects specified by the starting object offset.
+
+            :param obj_type: the type of the object (ex. POST)
+            :param start: the offset of the first object to return
+            :param limit: the maximum number of objects to return
+            :param cache: if the cache should be used to avoid useless requests
+            :param kwargs: additional parameters to pass to the function (for POST only)
+        """
+        get_func = None
+        if obj_type == WPApi.USER:
+            get_func = self.get_users
+        if obj_type == WPApi.TAG:
+            get_func = self.get_tags
+        if obj_type == WPApi.CATEGORY:
+            get_func = self.get_categories
+        if obj_type == WPApi.PAGE:
+            get_func = self.get_pages
+        if obj_type == WPApi.COMMENT:
+            get_func = self.get_comments
+        if obj_type == WPApi.MEDIA:
+            get_func = self.get_media
+        
+        if get_func is not None:
+            return get_func(start=start, num=limit, force=not cache)
+        elif obj_type == WPApi.POST:
+            return self.get_posts(start=start, num=limit, force=not cache, **kwargs)
+        return []

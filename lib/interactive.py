@@ -100,6 +100,128 @@ class InteractiveShell(cmd.Cmd):
             args.append(csv_file)
             export_func(*args, **kwargs)
     
+    def get_fetch_or_list_type(self, obj_type, plural=False):
+        """
+            Returns a dict containing all necessary metadata
+             about the obj_type to list and fetch data
+
+            :param obj_type: the type of the object
+            :param plural: whether the name must be plural or not
+        """
+        display_func = None
+        export_func = None
+        additional_info = {}
+        obj_name = ""
+        if obj_type == WPApi.USER:
+            display_func = InfoDisplayer.display_users
+            export_func = Exporter.export_users
+            additional_info = {}
+            obj_name = "Users" if plural else "User"
+        elif obj_type == WPApi.TAG:
+            display_func = InfoDisplayer.display_tags
+            export_func = Exporter.export_tags
+            additional_info = {}
+            obj_name = "Tags" if plural else "Tag"
+        elif obj_type == WPApi.CATEGORY:
+            display_func = InfoDisplayer.display_categories
+            export_func = Exporter.export_categories
+            additional_info = {
+                'category_list': self.scanner.categories
+            }
+            obj_name = "Categories" if plural else "Category"
+        elif obj_type == WPApi.POST:
+            display_func = InfoDisplayer.display_posts
+            export_func = Exporter.export_posts
+            additional_info = {
+                'tags_list': self.scanner.tags,
+                'categories_list': self.scanner.categories,
+                'users_list': self.scanner.users
+            }
+            obj_name = "Posts" if plural else "Post"
+        elif obj_type == WPApi.PAGE:
+            display_func = InfoDisplayer.display_pages
+            export_func = Exporter.export_pages
+            additional_info = {
+                'parent_pages': self.scanner.pages,
+                'users': self.scanner.users
+            }
+            obj_name = "Pages" if plural else "Page"
+        elif obj_type == WPApi.COMMENT:
+            display_func = InfoDisplayer.display_comments
+            export_func = Exporter.export_comments_interactive
+            additional_info = {
+                #'parent_posts': self.scanner.posts, # May be too verbose
+                'users': self.scanner.users
+            }
+            obj_name = "Comments" if plural else "Comment"
+        elif obj_type == WPApi.MEDIA:
+            display_func = InfoDisplayer.display_media
+            export_func = Exporter.export_media
+            additional_info = {'users': self.scanner.users}
+            obj_name = "Media"
+
+        return {
+            "display_func": display_func,
+            "export_func": export_func,
+            "additional_info": additional_info,
+            "obj_name": obj_name
+        }
+
+    def fetch_obj(self, obj_type, obj_id, cache=True, json=None, csv=None):
+        """
+            Displays and exports (if relevant) the object fetched by ID
+
+            :param obj_type: the type of the object
+            :param obj_id: the ID of the obj
+            :param cache: whether to use the cache of not
+            :param json: json export filename
+            :param csv: csv export filename
+        """
+        prop = self.get_fetch_or_list_type(obj_type)
+        print(prop["obj_name"] + " details")
+        try:
+            obj = self.scanner.get_obj_by_id(obj_type, obj_id, use_cache=cache)
+            if len(obj) == 0:
+                Console.log_info(prop["obj_name"] + " not found\n")
+            else:
+                prop["display_func"](obj, details=True)
+                if len(prop["additional_info"].keys()) > 0:
+                    InteractiveShell.export_decorator(prop["export_func"], False, "", json, csv, obj, prop["additional_info"])
+                else:
+                    InteractiveShell.export_decorator(prop["export_func"], False, "", json, csv, obj)
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+        except IOError as e:
+            Console.log_error("Could not open %s for writing" % e.filename)
+        print()
+    
+    def list_obj(self, obj_type, start, limit, is_all=False, cache=True, json=None, csv=None):
+        """
+            Displays and exports (if relevant) the object list
+
+            :param obj_type: the type of the object
+            :param start: the offset of the first object
+            :param limit: the maximum number of objects to list
+            :param is_all: are all object types requested?
+            :param cache: whether to use the cache of not
+            :param json: json export filename
+            :param csv: csv export filename
+        """
+        prop = self.get_fetch_or_list_type(obj_type, plural=True)
+        print(prop["obj_name"] + " details")
+        try:
+            kwargs = {}
+            if obj_type == WPApi.POST:
+                kwargs = {"comments": False}
+            obj_list = self.scanner.get_obj_list(obj_type, start, limit, cache, kwargs=kwargs)
+            prop["display_func"](obj_list)
+            InteractiveShell.export_decorator(prop["export_func"], is_all, prop["obj_name"].lower(), json, csv, obj_list)
+        except WordPressApiNotV2:
+            Console.log_error("The API does not support WP V2")
+        except IOError as e:
+            Console.log_error("Could not open %s for writing" % e.filename)
+        print()
+
     def do_exit(self, arg):
         'Exit wp-json-scraper'
         return True
@@ -206,109 +328,28 @@ class InteractiveShell(cmd.Cmd):
         if args is None:
             return
         # The checks must be ordered by dependencies
+        kwargs = {
+            "start": args.start, 
+            "limit": args.limit, 
+            "is_all": args.what == "all", 
+            "cache": args.cache, 
+            "json": args.json, 
+            "csv": args.csv
+        }
         if args.what == "all" or args.what == "users":
-            print("Users list")
-            try:
-                users = self.scanner.get_users(start=args.start, num=args.limit, force=not args.cache)
-                InfoDisplayer.display_users(users)
-                InteractiveShell.export_decorator(Exporter.export_users, args.what == "all", "users", args.json, args.csv, users)
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            self.list_obj(WPApi.USER, **kwargs)
         if args.what == "all" or args.what == "tags":
-            print("Tags list")
-            try:
-                tags = self.scanner.get_tags(start=args.start, num=args.limit, force=not args.cache)
-                InfoDisplayer.display_tags(tags)
-                InteractiveShell.export_decorator(Exporter.export_tags, args.what == "all", "tags", args.json, args.csv, tags)
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            self.list_obj(WPApi.TAG, **kwargs)
         if args.what == "all" or args.what == "categories":
-            print("Categories list")
-            try:
-                categories = self.scanner.get_categories(start=args.start, num=args.limit, force=not args.cache)
-                InfoDisplayer.display_categories(categories)
-                InteractiveShell.export_decorator(Exporter.export_categories, args.what == "all", "categories", args.json, args.csv, 
-                    categories, {'category_list': self.scanner.categories})
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            self.list_obj(WPApi.CATEGORY, **kwargs)
         if args.what == "all" or args.what == "posts":
-            print("Posts list")
-            try:
-                posts = self.scanner.get_posts(comments=False, start=args.start, num=args.limit, force=not args.cache)
-                Console.log_success("Got %d entries" % len(posts))
-                InfoDisplayer.display_posts(posts)
-                InteractiveShell.export_decorator(Exporter.export_posts, args.what == "all", "posts", args.json, args.csv, 
-                    posts, 
-                    {
-                        'tags_list': self.scanner.tags,
-                        'categories_list': self.scanner.categories,
-                        'users_list': self.scanner.users
-                    }
-                )
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            self.list_obj(WPApi.POST, **kwargs)
         if args.what == "all" or args.what == "pages":
-            print("Pages list")
-            try:
-                pages = self.scanner.get_pages(start=args.start, num=args.limit, force=not args.cache)
-                InfoDisplayer.display_pages(pages)
-                InteractiveShell.export_decorator(Exporter.export_pages, args.what == "all", "pages", args.json, args.csv, 
-                    pages, 
-                    {
-                        'parent_pages': self.scanner.pages,
-                        'users': self.scanner.users
-                    }
-                )
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            self.list_obj(WPApi.PAGE, **kwargs)
         if args.what == "all" or args.what == "comments":
-            print("Comments list")
-            try:
-                comments = self.scanner.get_comments(start=args.start, num=args.limit, force=not args.cache)
-                InfoDisplayer.display_comments(comments)
-                InteractiveShell.export_decorator(Exporter.export_comments_interactive, args.what == "all", "comments", args.json, 
-                    args.csv, comments, 
-                    {
-                        #'parent_posts': self.scanner.posts, # May be too verbose
-                        'users': self.scanner.users
-                    }
-                )
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            self.list_obj(WPApi.COMMENT, **kwargs)
         if args.what == "all" or args.what == "media":
-            print("Media list")
-            try:
-                media = self.scanner.get_media(start=args.start, num=args.limit, force=not args.cache)
-                InfoDisplayer.display_media(media)
-                InteractiveShell.export_decorator(Exporter.export_media, args.what == "all", "media", args.json, 
-                    args.csv, media, 
-                    {
-                        'users': self.scanner.users
-                    }
-                )
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            self.list_obj(WPApi.MEDIA, **kwargs)
 
     def do_fetch(self, arg):
         'Fetches a specific content specified by ID'
@@ -332,135 +373,26 @@ class InteractiveShell(cmd.Cmd):
         parser.add_argument("--csv", "-c", help="list and store as csv to the specified file")
         parser.add_argument("--no-cache", dest="cache", action="store_false", help="don't lookup in cache and ask the server")
         args = parser.custom_parse_args(arg)
+        what_type = None
         if args is None:
             return
         if args.what == "user":
-            print("User details")
-            try:
-                user = self.scanner.get_obj_by_id(WPApi.USER, args.id, use_cache=args.cache)
-                if len(user) == 0:
-                    Console.log_info("User not found\n")
-                else:
-                    InfoDisplayer.display_users(user, True)
-                InteractiveShell.export_decorator(Exporter.export_users, False, "", args.json, args.csv, user)
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            what_type = WPApi.USER
         elif args.what == "tag":
-            print("Tag details")
-            try:
-                tag = self.scanner.get_obj_by_id(WPApi.TAG, args.id, use_cache=args.cache)
-                if len(tag) == 0:
-                    Console.log_info("Tag not found\n")
-                else:
-                    InfoDisplayer.display_tags(tag, True)
-                    InteractiveShell.export_decorator(Exporter.export_tags, False, "", args.json, args.csv, tag)
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            what_type = WPApi.TAG
         elif args.what == "category":
-            print("Category details")
-            try:
-                category = self.scanner.get_obj_by_id(WPApi.CATEGORY, args.id, use_cache=args.cache)
-                if len(category) == 0:
-                    Console.log_info("Category not found\n")
-                else:
-                    if 'parent' in category[0].keys():
-                        obj = get_by_id(self.scanner.categories, category[0]['parent'])
-                        if obj is not None and 'name' in obj.keys():
-                            category[0] = copy.deepcopy(category[0])
-                            category[0]['parent'] = "%s (%d)" % (obj['name'], category[0]['parent'])
-
-                    InfoDisplayer.display_categories(category, True)
-                    InteractiveShell.export_decorator(Exporter.export_categories, False, "", args.json, args.csv, category)
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            what_type = WPApi.CATEGORY
         elif args.what == "post":
-            print("Post details")
-            try:
-                post = self.scanner.get_obj_by_id(WPApi.POST, args.id, use_cache=args.cache)
-                if len(post) == 0:
-                    Console.log_info("Post not found\n")
-                else:
-                    InfoDisplayer.display_posts(post, details=True)
-                    InteractiveShell.export_decorator(Exporter.export_posts, False, "", args.json, args.csv, 
-                        post, 
-                        {
-                            'tags_list': self.scanner.tags,
-                            'categories_list': self.scanner.categories,
-                            'users_list': self.scanner.users
-                        }
-                    )
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
+            what_type = WPApi.POST
         elif args.what == "page":
-            print("Page details")
-            try:
-                page = self.scanner.get_obj_by_id(WPApi.PAGE, args.id, use_cache=args.cache)
-                if len(page) == 0:
-                    Console.log_info("Page not found\n")
-                else:
-                    InfoDisplayer.display_pages(page, details=True)
-                    InteractiveShell.export_decorator(Exporter.export_pages, False, "", args.json, args.csv, 
-                        page, 
-                        {
-                            'parent_pages': self.scanner.pages,
-                            'users': self.scanner.users
-                        }
-                    )
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            what_type = WPApi.PAGE
         elif args.what == "comment":
-            print("Comment details")
-            try:
-                comment = self.scanner.get_obj_by_id(WPApi.COMMENT, args.id, use_cache=args.cache)
-                if len(comment) == 0:
-                    Console.log_info("Comment not found\n")
-                else:
-                    InfoDisplayer.display_comments(comment, True)
-                    InteractiveShell.export_decorator(Exporter.export_comments_interactive, False, "", args.json, 
-                        args.csv, comment, 
-                        {
-                            #'parent_posts': self.scanner.posts, # May be too verbose
-                            'users': self.scanner.users
-                        }
-                    )
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            what_type = WPApi.COMMENT
         elif args.what == "media":
-            print("Media details")
-            try:
-                media = self.scanner.get_obj_by_id(WPApi.MEDIA, args.id, use_cache=args.cache)
-                if len(media) == 0:
-                    Console.log_info("Media not found\n")
-                else:
-                    InfoDisplayer.display_media(media, details=True)
-                    InteractiveShell.export_decorator(Exporter.export_media, False, "", args.json, 
-                        args.csv, media, 
-                        {
-                            'users': self.scanner.users
-                        }
-                    )
-            except WordPressApiNotV2:
-                Console.log_error("The API does not support WP V2")
-            except IOError as e:
-                Console.log_error("Could not open %s for writing" % e.filename)
-            print()
+            what_type = WPApi.MEDIA
+        
+        if what_type is not None:
+            self.fetch_obj(what_type, args.id, cache=args.cache, json=args.json, csv=args.csv)
         else:
             print("Not implemented")
             print()
