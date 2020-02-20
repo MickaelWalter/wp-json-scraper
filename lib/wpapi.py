@@ -246,20 +246,27 @@ class WPApi:
 
         return content
 
-    def get_from_cache(self, cache, start=None, num=None):
+    def get_from_cache(self, cache, start=None, num=None, force=False):
         """
-        Tries to fetch data from the given cache
+            Tries to fetch data from the given cache, also verifies first if WP-JSON is supported
         """
-        if start is not None and num is None and len(cache) > start and None not in cache[start:]:
-            # If start is specified and not num, we want to return the posts in cache only if they were already cached
-            return cache[start:]
-        elif start is None and num is not None and len(cache) > num and None not in cache[:num]:
-            # If num is specified and not start, we want to do something similar to the above
-            return cache[:num]
-        elif start is not None and num is not None and len(cache) > start + num and None not in cache[start:num]:
-            return cache[start:start+num]
-        elif (start is None and (num is None or num > len(cache))) and None not in cache:
-            return cache
+        if self.has_v2 is None:
+            self.get_basic_info()
+        if not self.has_v2:
+            raise WordPressApiNotV2
+        if cache is not None and start is not None and len(cache) <= start:
+            start = len(cache) - 1
+        if cache is not None and not force:
+            if start is not None and num is None and len(cache) > start and None not in cache[start:]:
+                # If start is specified and not num, we want to return the posts in cache only if they were already cached
+                return cache[start:]
+            elif start is None and num is not None and len(cache) > num and None not in cache[:num]:
+                # If num is specified and not start, we want to do something similar to the above
+                return cache[:num]
+            elif start is not None and num is not None and len(cache) > start + num and None not in cache[start:num]:
+                return cache[start:start+num]
+            elif (start is None and (num is None or num > len(cache))) and None not in cache:
+                return cache
         
         return None
 
@@ -270,7 +277,11 @@ class WPApi:
             s = start
             if start is None:
                 s = 0
+            if start >= total_entries:
+                s = total_entries - 1
             n = num
+            if n is not None and s + n > total_entries:
+                n = total_entries - s
             if num is None:
                 n = total_entries
             if n > len(cache):
@@ -281,7 +292,7 @@ class WPApi:
                 if s == n:
                     break
         if len(cache) != total_entries:
-            if start is not None:
+            if start is not None and start < total_entries:
                 cache = [None] * start + cache
             if num is not None:
                 cache += [None] * (total_entries - len(cache))
@@ -291,16 +302,9 @@ class WPApi:
         """
         Retrieves all comments
         """
-        if self.has_v2 is None:
-            self.get_basic_info()
-        if not self.has_v2:
-            raise WordPressApiNotV2
-        if self.comments is not None and start is not None and len(self.comments) < start:
-            start = len(self.comments) - 1
-        if self.comments is not None and not force:
-            comments = self.get_from_cache(self.comments, start, num)
-            if comments is not None:
-                return comments
+        comments = self.get_from_cache(self.comments, start, num, force)
+        if comments is not None:
+            return comments
 
         comments, total_entries = self.crawl_pages('wp/v2/comments?page=%d')
         self.comments = self.update_cache(self.comments, comments, total_entries, start, num)
@@ -351,16 +355,9 @@ class WPApi:
         """
         Retrieves all tags
         """
-        if self.has_v2 is None:
-            self.get_basic_info()
-        if not self.has_v2:
-            raise WordPressApiNotV2
-        if self.tags is not None and start is not None and len(self.tags) < start:
-            start = len(self.tags) - 1
-        if self.tags is not None and not force:
-            tags = self.get_from_cache(self.tags, start, num)
-            if tags is not None:
-                return tags
+        tags = self.get_from_cache(self.tags, start, num, force)
+        if tags is not None:
+            return tags
 
         tags, total_entries = self.crawl_pages('wp/v2/tags?page=%d')
         self.tags = self.update_cache(self.tags, tags, total_entries, start, num)
@@ -370,14 +367,9 @@ class WPApi:
         """
         Retrieves all categories or the specified ones
         """
-        if self.has_v2 is None:
-            self.get_basic_info()
-        if not self.has_v2:
-            raise WordPressApiNotV2
-        if self.categories is not None and not force:
-            categories = self.get_from_cache(self.categories, start, num)
-            if categories is not None:
-                return categories
+        categories = self.get_from_cache(self.categories, start, num, force)
+        if categories is not None:
+            return categories
         
         categories, total_entries = self.crawl_pages('wp/v2/categories?page=%d', start=start, num=num)
         self.categories = self.update_cache(self.categories, categories, total_entries, start, num)
@@ -387,14 +379,9 @@ class WPApi:
         """
         Retrieves all users or the specified ones
         """
-        if self.has_v2 is None:
-            self.get_basic_info()
-        if not self.has_v2:
-            raise WordPressApiNotV2
-        if self.users is not None and not force:
-            users = self.get_from_cache(self.users, start, num)
-            if users is not None:
-                return users
+        users = self.get_from_cache(self.users, start, num, force)
+        if users is not None:
+            return users
 
         users, total_entries = self.crawl_pages('wp/v2/users?page=%d', start=start, num=num)
         self.users = self.update_cache(self.users, users, total_entries, start, num)
@@ -404,14 +391,9 @@ class WPApi:
         """
         Retrieves all media objects
         """
-        if self.has_v2 is None:
-            self.get_basic_info()
-        if not self.has_v2:
-            raise WordPressApiNotV2
-        if self.media is not None and not force:
-            media = self.get_from_cache(self.media, start, num)
-            if media is not None:
-                return media
+        media = self.get_from_cache(self.media, start, num, force)
+        if media is not None:
+            return media
 
         media, total_entries = self.crawl_pages('wp/v2/media?page=%d')
         self.media = self.update_cache(self.media, media, total_entries, start, num)
@@ -421,14 +403,9 @@ class WPApi:
         """
         Retrieves all pages
         """
-        if self.has_v2 is None:
-            self.get_basic_info()
-        if not self.has_v2:
-            raise WordPressApiNotV2
-        if self.pages is not None and not force:
-            pages = self.get_from_cache(self.pages, start, num)
-            if pages is not None:
-                return pages
+        pages = self.get_from_cache(self.pages, start, num, force)
+        if pages is not None:
+            return pages
 
         pages, total_entries = self.crawl_pages('wp/v2/pages?page=%d')
         self.pages = self.update_cache(self.pages, pages, total_entries, start, num)
