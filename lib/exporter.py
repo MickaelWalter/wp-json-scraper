@@ -389,6 +389,18 @@ class Exporter:
         Exporter.write_file(filename, fmt, csv_keys, exported_media, details)
         return len(exported_media)
 
+    @staticmethod
+    def export_namespaces(namespaces, fmt, filename):
+        """
+            **NOT IMPLEMENTED** Exports namespaces in specified format to specified file.
+
+            :param namespaces: the namespaces to export
+            :param fmt: the export format (JSON or CSV)
+            :return: the length of the list written to the file
+        """
+        Console.log_info("Namespaces export not available yet")
+        return 0
+
     # FIXME to be refactored
     @staticmethod
     def export_comments_interactive(comments, fmt, filename, parent_posts=None, users=None):

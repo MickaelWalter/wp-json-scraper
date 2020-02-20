@@ -92,6 +92,20 @@ class InfoDisplayer:
         print()
 
     @staticmethod
+    def display_namespaces(information, details=False):
+        """
+            Displays namespace list of the WordPress API
+
+            :param information: information as a JSON object
+            :param details: unused, available for compatibility purposes
+        """
+        print()
+        if information is not None:
+            for ns in information:
+                print("* %s" % ns)
+        print()
+
+    @staticmethod
     def display_endpoints(information):
         """
         Displays endpoint documentation of the WordPress API

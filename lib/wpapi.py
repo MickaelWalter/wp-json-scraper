@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 import math
+import copy
 
 import requests
 from urllib.parse import urlencode
@@ -77,6 +78,10 @@ class WPApi:
     THEME = 9
     """
         The theme type
+    """
+    NAMESPACE = 10
+    """
+        The namespace type
     """
     #SEARCH_RESULT = 10
 
@@ -411,19 +416,26 @@ class WPApi:
         self.pages = self.update_cache(self.pages, pages, total_entries, start, num)
         return pages
 
-    def get_namespaces(self):
+    def get_namespaces(self, start=None, num=None, force=False):
         """
         Retrieves an array of namespaces
         """
-        if self.has_v2 is None:
+        if self.has_v2 is None or force:
             self.get_basic_info()
         if 'namespaces' in self.basic_info.keys():
-            return self.basic_info['namespaces']
+            if start is None and num is None:
+                return self.basic_info['namespaces']
+            namespaces = copy.deepcopy(self.basic_info['namespaces'])
+            if start is not None and start < len(namespaces):
+                namespaces = namespaces[start:]
+            if num <= len(namespaces):
+                namespaces = namespaces[:num]
+            return namespaces
         return []
 
     def get_routes(self):
         """
-        Retrieves an array of namespaces
+        Retrieves an array of routes
         """
         if self.has_v2 is None:
             self.get_basic_info()
@@ -516,16 +528,18 @@ class WPApi:
         get_func = None
         if obj_type == WPApi.USER:
             get_func = self.get_users
-        if obj_type == WPApi.TAG:
+        elif obj_type == WPApi.TAG:
             get_func = self.get_tags
-        if obj_type == WPApi.CATEGORY:
+        elif obj_type == WPApi.CATEGORY:
             get_func = self.get_categories
-        if obj_type == WPApi.PAGE:
+        elif obj_type == WPApi.PAGE:
             get_func = self.get_pages
-        if obj_type == WPApi.COMMENT:
+        elif obj_type == WPApi.COMMENT:
             get_func = self.get_comments
-        if obj_type == WPApi.MEDIA:
+        elif obj_type == WPApi.MEDIA:
             get_func = self.get_media
+        elif obj_type == WPApi.NAMESPACE:
+            get_func = self.get_namespaces
         
         if get_func is not None:
             return get_func(start=start, num=limit, force=not cache)

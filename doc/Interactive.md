@@ -89,6 +89,10 @@ Example 3: export all listeable content to json files (including for example all
 
     list all --json all-data
 
+Example 4: list namespaces
+
+    list namespaces
+
 ### fetch
 
 Fetches a specific piece of data from the server given its type and its ID. By default, if the data is cached, 

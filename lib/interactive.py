@@ -159,6 +159,11 @@ class InteractiveShell(cmd.Cmd):
             export_func = Exporter.export_media
             additional_info = {'users': self.scanner.users}
             obj_name = "Media"
+        elif obj_type == WPApi.NAMESPACE:
+            display_func = InfoDisplayer.display_namespaces
+            export_func = Exporter.export_media
+            additional_info = {}
+            obj_name = "Namespaces" if plural else "Namespace"
 
         return {
             "display_func": display_func,
@@ -316,6 +321,7 @@ class InteractiveShell(cmd.Cmd):
             'users',
             #'themes',
             #'search-results',
+            'namespaces',
             'all',
             ],
             help='what to list')
@@ -350,6 +356,8 @@ class InteractiveShell(cmd.Cmd):
             self.list_obj(WPApi.COMMENT, **kwargs)
         if args.what == "all" or args.what == "media":
             self.list_obj(WPApi.MEDIA, **kwargs)
+        if args.what == "all" or args.what == "namespaces":
+            self.list_obj(WPApi.NAMESPACE, **kwargs)
 
     def do_fetch(self, arg):
         'Fetches a specific content specified by ID'
