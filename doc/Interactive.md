@@ -112,3 +112,20 @@ Example 1 : display the post with the ID 1
 Example 2 : display the page with the ID 42 and export it in a JSON file, don't use the cache
 
     fetch page 42 --no-cache
+
+### search
+
+Looks for data based on the specified keywords. This command doesn't use the cache and systematically uses the 
+WordPress API to do searches. One or several object types may be provided to narrow the search scope.
+
+Example 1: look for keyword test in all object types
+
+    search test
+
+Example 2: look for keyword foo in posts and pages
+
+    search --type post --type page foo
+
+Example 3: --limit and --start also work for search results
+
+    search --limit 5 --start 4 bar

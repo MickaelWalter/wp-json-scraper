@@ -84,6 +84,10 @@ class WPApi:
         The namespace type
     """
     #SEARCH_RESULT = 10
+    ALL_TYPES = 20
+    """
+        Constant representing all types
+    """
 
     def __init__(self, target, api_path="wp-json/", session=None,
                  search_terms=None):
@@ -116,6 +120,59 @@ class WPApi:
             self.s = session
         else:
             self.s = RequestSession()
+
+    @staticmethod 
+    def str_type_to_native(str_type):
+        """
+            Converts a single object type as str to its corresponding native type.
+            If the object type is unknown, this returns None as a fallback.
+            This may have to be modified in cases of bugs.
+
+            :param str_type: the object type as string
+            :return: the object type as native constant
+
+            ```
+            str_type_to_native("post") # returns WPApi.POST
+            ```
+        """
+        if str_type == "user":
+            return WPApi.USER
+        elif str_type == "tag":
+            return WPApi.TAG
+        elif str_type == "category":
+            return WPApi.CATEGORY
+        elif str_type == "post":
+            return WPApi.POST
+        elif str_type == "page":
+            return WPApi.PAGE
+        elif str_type == "comment":
+            return WPApi.COMMENT
+        elif str_type == "media":
+            return WPApi.MEDIA
+        elif str_type == "post_revision":
+            return WPApi.POST_REVISION
+        elif str_type == "block":
+            return WPApi.WP_BLOCK
+        elif str_type == "theme":
+            return WPApi.THEME
+        elif str_type == "namespace":
+            return WPApi.NAMESPACE
+        return None
+
+    @staticmethod
+    def convert_obj_types_to_list(str_types):
+        """
+            Converts a list of object type as list to a list of native constants 
+            representing the object types.
+        """
+        out = []
+        if str_types is None or len(str_types) == 0 or 'all' in str_types:
+            return [WPApi.ALL_TYPES]
+        for el in str_types:
+            current = WPApi.str_type_to_native(el)
+            if current is not None:
+                out.append(current)
+        return out
 
     def get_orphans_comments(self):
         """
@@ -151,11 +208,13 @@ class WPApi:
 
         return self.basic_info
 
-    def crawl_pages(self, url, start=None, num=None):
+    def crawl_pages(self, url, start=None, num=None, search_terms=None, display_progress=True):
         """
         Crawls all pages while there is at least one result for the given
         endpoint or tries to get pages from start to end
         """
+        if search_terms is None:
+            search_terms = self.search_terms
         page = 1
         total_entries = 0
         total_pages = 0
@@ -164,11 +223,11 @@ class WPApi:
         base_url = url
         entries_left = 1
         per_page = 10
-        if self.search_terms is not None:
+        if search_terms is not None:
             if '?' in base_url:
-                base_url += '&' + urlencode({'search': self.search_terms})
+                base_url += '&' + urlencode({'search': search_terms})
             else:
-                base_url += '?' + urlencode({'search': self.search_terms})
+                base_url += '?' + urlencode({'search': search_terms})
         if start is not None:
             page = math.floor(start/per_page) + 1
         if num is not None:
@@ -211,16 +270,17 @@ class WPApi:
                         else:
                             entries += json_content[:entries_left]
                             entries_left = 0
-                        
-                    if num is None and start is None and total_entries >= 0:
-                        print_progress_bar(page, total_pages,
-                        length=70)
-                    elif num is None and start is not None and total_entries >= 0:
-                        print_progress_bar(total_entries-start-entries_left, total_entries-start,
-                        length=70)
-                    elif num is not None and total_entries > 0:
-                        print_progress_bar(num-entries_left, num,
-                        length=70)
+                    
+                    if display_progress:
+                        if num is None and start is None and total_entries >= 0:
+                            print_progress_bar(page, total_pages,
+                            length=70)
+                        elif num is None and start is not None and total_entries >= 0:
+                            print_progress_bar(total_entries-start-entries_left, total_entries-start,
+                            length=70)
+                        elif num is not None and total_entries > 0:
+                            print_progress_bar(num-entries_left, num,
+                            length=70)
                 else:
                     more_entries = False
             except JSONDecodeError:
@@ -400,7 +460,7 @@ class WPApi:
         if media is not None:
             return media
 
-        media, total_entries = self.crawl_pages('wp/v2/media?page=%d')
+        media, total_entries = self.crawl_pages('wp/v2/media?page=%d', start=start, num=num)
         self.media = self.update_cache(self.media, media, total_entries, start, num)
         return media
 
@@ -546,3 +606,36 @@ class WPApi:
         elif obj_type == WPApi.POST:
             return self.get_posts(start=start, num=limit, force=not cache, **kwargs)
         return []
+    
+    def search(self, obj_types, keywords, start, limit):
+        """
+            Looks for data with the specified keywords of the given types.
+
+            :param obj_types: a list of the desired object types to look for
+            :param keywords: the keywords to look for
+            :param start: a start index
+            :param limit: the max number to return
+            :return: a dict of lists of objects sorted by types
+        """
+        out = {}
+        if WPApi.ALL_TYPES in obj_types or len(obj_types) == 0:
+            obj_types = [
+                WPApi.POST, WPApi.CATEGORY, WPApi.TAG, WPApi.PAGE,
+                WPApi.COMMENT, WPApi.MEDIA, WPApi.USER
+            ] # All supported types for search
+        for t in obj_types:
+            if t == WPApi.POST:
+                out[t] = self.crawl_pages('wp/v2/posts?page=%d', start=start, num=limit, search_terms=keywords, display_progress=False)[0]
+            elif t == WPApi.CATEGORY:
+                out[t] = self.crawl_pages('wp/v2/categories?page=%d', start=start, num=limit, search_terms=keywords, display_progress=False)[0]
+            elif t == WPApi.TAG:
+                out[t] = self.crawl_pages('wp/v2/tags?page=%d', start=start, num=limit, search_terms=keywords, display_progress=False)[0]
+            elif t == WPApi.PAGE:
+                out[t] = self.crawl_pages('wp/v2/pages?page=%d', start=start, num=limit, search_terms=keywords, display_progress=False)[0]
+            elif t == WPApi.COMMENT:
+                out[t] = self.crawl_pages('wp/v2/comments?page=%d', start=start, num=limit, search_terms=keywords, display_progress=False)[0]
+            elif t == WPApi.MEDIA:
+                out[t] = self.crawl_pages('wp/v2/media?page=%d', start=start, num=limit, search_terms=keywords, display_progress=False)[0]
+            elif t == WPApi.USER:
+                out[t] = self.crawl_pages('wp/v2/users?page=%d', start=start, num=limit, search_terms=keywords, display_progress=False)[0]
+        return out

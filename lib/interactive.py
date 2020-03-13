@@ -384,25 +384,65 @@ class InteractiveShell(cmd.Cmd):
         what_type = None
         if args is None:
             return
-        if args.what == "user":
-            what_type = WPApi.USER
-        elif args.what == "tag":
-            what_type = WPApi.TAG
-        elif args.what == "category":
-            what_type = WPApi.CATEGORY
-        elif args.what == "post":
-            what_type = WPApi.POST
-        elif args.what == "page":
-            what_type = WPApi.PAGE
-        elif args.what == "comment":
-            what_type = WPApi.COMMENT
-        elif args.what == "media":
-            what_type = WPApi.MEDIA
+        what_type = WPApi.str_type_to_native(args.what)
         
         if what_type is not None:
             self.fetch_obj(what_type, args.id, cache=args.cache, json=args.json, csv=args.csv)
         else:
             print("Not implemented")
+            print()
+    
+    def do_search(self, arg):
+        'Looks for specific keywords in the WordPress API'
+        parser = ArgumentParser(prog='search', description='searches something from the server')
+        parser.add_argument("--type", "-t", action="append", choices=[
+            'all',
+            'post', 
+            #'post-revision', 
+            #'wp-block', 
+            'category',
+            'tag',
+            'page',
+            'comment',
+            'media',
+            'user',
+            #'theme',
+            #'search-result',
+            ],
+            help='the types to look for (default all)',
+            dest='what'
+            )
+        parser.add_argument("keywords", help='the keywords to look for')
+        parser.add_argument("--json", "-j", help="list and store as json to the specified file(s)")
+        parser.add_argument("--csv", "-c", help="list and store as csv to the specified file(s)")
+        parser.add_argument("--limit", "-l", type=int, help="limit the number of results")
+        parser.add_argument("--start", "-s", type=int, help="start at the given index")
+        args = parser.custom_parse_args(arg)
+        if args is None:
+            return
+        what_types = WPApi.convert_obj_types_to_list(args.what)
+        results = self.scanner.search(what_types, args.keywords, args.start, args.limit)
+        print()
+        for k, v in results.items():
+            prop = self.get_fetch_or_list_type(k, plural=True)
+            print(prop["obj_name"] + " details")
+            if len(v) == 0:
+                Console.log_info("No result")
+            else:
+                try:
+                    prop["display_func"](v)
+                    InteractiveShell.export_decorator(
+                        prop["export_func"],
+                        len(what_types) > 1 or WPApi.ALL_TYPES in what_types,
+                        prop["obj_name"].lower(),
+                        args.json,
+                        args.csv,
+                        v
+                    )
+                except WordPressApiNotV2:
+                    Console.log_error("The API does not support WP V2")
+                except IOError as e:
+                    Console.log_error("Could not open %s for writing" % e.filename)
             print()
 
 def start_interactive(target, session, version):
