@@ -371,7 +371,7 @@ class WPApi:
         if comments is not None:
             return comments
 
-        comments, total_entries = self.crawl_pages('wp/v2/comments?page=%d')
+        comments, total_entries = self.crawl_pages('wp/v2/comments?page=%d', start, num)
         self.comments = self.update_cache(self.comments, comments, total_entries, start, num)
         return comments
 
@@ -424,7 +424,7 @@ class WPApi:
         if tags is not None:
             return tags
 
-        tags, total_entries = self.crawl_pages('wp/v2/tags?page=%d')
+        tags, total_entries = self.crawl_pages('wp/v2/tags?page=%d', start, num)
         self.tags = self.update_cache(self.tags, tags, total_entries, start, num)
         return tags
 
@@ -472,7 +472,7 @@ class WPApi:
         if pages is not None:
             return pages
 
-        pages, total_entries = self.crawl_pages('wp/v2/pages?page=%d')
+        pages, total_entries = self.crawl_pages('wp/v2/pages?page=%d', start=start, num=num)
         self.pages = self.update_cache(self.pages, pages, total_entries, start, num)
         return pages
 
