@@ -36,7 +36,7 @@ from lib.exporter import Exporter
 from lib.requestsession import RequestSession
 from lib.interactive import start_interactive
 
-version = '0.4.1'
+version = '0.5'
 
 def main():
     parser = argparse.ArgumentParser(description=
