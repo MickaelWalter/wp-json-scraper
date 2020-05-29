@@ -129,3 +129,25 @@ Example 2: look for keyword foo in posts and pages
 Example 3: --limit and --start also work for search results
 
     search --limit 5 --start 4 bar
+
+### dl
+
+Downloads media based on the provided ID. The ID can be specified as an integer (or list of integers), `all` or 
+`cache`. In the first case, only media with the specified IDs will be downloaded. `all` will trigger a fetch from 
+the API to list all medias then a download session for each file. `cache` will get media URLs from the cache and 
+then download the files. 
+
+Note that if all the IDs specified are in the cache, no lookup will be made on the API. If you want to override 
+this behaviour, set the `--no-cache` flag.
+
+Example 1: download the media with the IDs 42 and 63 to the current folder
+
+    dl 42,63 .
+
+Example 2: download all media to user's home folder
+
+    dl all /home/user
+
+Example 3: only media present in the cache (e.g. previously requested with list or fetch) are downloaded
+
+    dl cache .

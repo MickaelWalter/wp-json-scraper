@@ -26,9 +26,11 @@ import html
 import json
 import csv
 from datetime import datetime
+from urllib import parse as urlparse
+import requests
 
 from lib.console import Console
-from lib.utils import get_by_id
+from lib.utils import get_by_id, print_progress_bar
 
 class Exporter:
     """
@@ -42,6 +44,49 @@ class Exporter:
     """
         Represents the CSV format for format choice
     """
+    CHUNK_SIZE = 2048
+    """
+        The size of chunks to download large files
+    """
+
+    @staticmethod
+    def download_media(media, output_folder):
+        """
+            Downloads the media files based on the given URLs
+            
+            :param media: the URLs as a list
+            :param output_folder: the path to the folder where the files are being saved, it is assumed as existing
+            :return: the number of files wrote
+        """
+        files_number = 0
+        media_length = len(media)
+        progress = 0
+        for m in media:
+            r = requests.get(m, stream=True)
+            if r.status_code == 200:
+                http_path = urlparse.urlparse(m).path.split("/")
+                local_path = output_folder
+                if len(http_path) > 1:
+                    for el in http_path[:-1]:
+                        local_path = os.path.join(local_path, el)
+                        if not os.path.isdir(local_path):
+                            os.mkdir(local_path)
+                local_path = os.path.join(local_path, http_path[-1])
+                with open(local_path, "wb") as f:
+                    i = 0
+                    content_size = int(r.headers['Content-Length'])
+                    for chunk in r.iter_content(Exporter.CHUNK_SIZE):
+                        if content_size > 10485706: # 10Mo
+                            print_progress_bar(i*Exporter.CHUNK_SIZE, content_size, prefix=http_path[-1], length=70)
+                        f.write(chunk)
+                        i += 1
+                    if content_size > 10485706: # 10Mo
+                            print_progress_bar(content_size, content_size, prefix=http_path[-1], length=70)
+                files_number += 1
+            progress += 1
+            if progress % 10 == 1:
+                print("Downloaded file %d of %d" % (progress, media_length))
+        return files_number
 
     @staticmethod
     def map_params(el, parameters_to_map):

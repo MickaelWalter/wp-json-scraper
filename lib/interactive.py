@@ -26,6 +26,7 @@ import shlex
 import sys
 import re
 import copy
+import os
 
 from lib.wpapi import WPApi, WordPressApiNotV2
 from lib.requestsession import RequestSession
@@ -444,6 +445,36 @@ class InteractiveShell(cmd.Cmd):
                 except IOError as e:
                     Console.log_error("Could not open %s for writing" % e.filename)
             print()
+
+    def do_dl(self, arg):
+        'Downloads a media file (e.g. from /wp-content/uploads/) based on its ID'
+
+        parser = ArgumentParser(prog='dl', description='downloads a media from the server')
+        parser.add_argument("ids", help='ids to look for (comma separated), "all" or "cache"')
+        parser.add_argument("dest", help='destination folder')
+        parser.add_argument("--no-cache", dest="cache", action="store_false", help="don't lookup in cache and ask the server")
+        args = parser.custom_parse_args(arg)
+        if args is None:
+            return
+        
+        if not os.path.isdir(args.dest):
+            Console.log_error("The destination is not a folder or does not exist")
+            return
+
+        print("Pulling the media URLs")
+
+        media = self.scanner.get_media_urls(args.ids, args.cache)
+        if len(media) == 0:
+            Console.log_error("No media found corresponding to the criteria")
+            return
+        print("%d media URLs found" % len(media))
+        answer = input("Do you wish to proceed to download? (y/N)")
+        if answer.lower() != "y":
+            return
+        print("Note: Only files over 10MB are logged here")
+
+        number_downloaded = Exporter.download_media(media, args.dest)
+        print('Downloaded %d media to %s' % (number_downloaded, args.dest))
 
 def start_interactive(target, session, version):
     """

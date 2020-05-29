@@ -463,6 +463,35 @@ class WPApi:
         media, total_entries = self.crawl_pages('wp/v2/media?page=%d', start=start, num=num)
         self.media = self.update_cache(self.media, media, total_entries, start, num)
         return media
+    
+    def get_media_urls(self, ids, cache=True):
+        """
+        Retrieves the media download URLs for specified IDs or all or from cache
+        """
+        media = []
+        if ids == 'all':
+            media = self.get_media(force=(not cache))
+        elif ids == 'cache':
+            media = self.get_from_cache(self.media, force=(not cache))
+        else:
+            id_list = ids.split(',')
+            media = []
+            for i in id_list:
+                try:
+                    if int(i) > 0:
+                        m = self.get_obj_by_id(WPApi.MEDIA, int(i), cache)
+                        if m is not None and len(m) > 0 and type(m[0]) is dict:
+                            media.append(m[0])
+                except ValueError:
+                    pass
+        urls = []
+        if media is None:
+            return []
+        for m in media:
+            if m is not None and type(m) is dict and "source_url" in m.keys():
+                urls.append(m["source_url"])
+        return urls
+            
 
     def get_pages(self, start=None, num=None, force=False):
         """

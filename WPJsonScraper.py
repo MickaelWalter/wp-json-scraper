@@ -25,6 +25,7 @@ SOFTWARE.
 import argparse
 import requests
 import re
+import os
 
 from lib.console import Console
 from lib.wpapi import WPApi
@@ -114,6 +115,10 @@ license, check LICENSE.txt for more information""")
                         dest='comment_export_folder',
                         action='store',
                         help='export comments to a specified destination folder')
+    parser.add_argument('--download-media',
+                        dest='media_folder',
+                        action='store',
+                        help='download media to the designated folder')
     parser.add_argument('-r',
                         '--crawl-ns',
                         dest='crawl_ns',
@@ -296,6 +301,7 @@ license, check LICENSE.txt for more information""")
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
+    media_list = None
     if args.media or args.all:
         try:
             Console.log_info("Media list")
@@ -365,6 +371,23 @@ license, check LICENSE.txt for more information""")
                 (page_number, args.comment_export_folder))
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
+
+    if args.media_folder is not None:
+        Console.log_info("Downloading media files")
+        if not os.path.isdir(args.media_folder):
+            Console.log_error("The destination is not a folder or does not exist")
+        else:
+            print("Pulling the media URLs")
+
+            media = scanner.get_media_urls('all', True)
+            if len(media) == 0:
+                Console.log_error("No media found")
+                return
+            print("%d media URLs found" % len(media))
+
+            print("Note: Only files over 10MB are logged here")
+            number_downloaded = Exporter.download_media(media, args.media_folder)
+            Console.log_success('Downloaded %d media to %s' % (number_downloaded, args.media_folder))
 
 
 if __name__ == "__main__":
