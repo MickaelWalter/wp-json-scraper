@@ -27,6 +27,7 @@ import json
 import csv
 from datetime import datetime
 from urllib import parse as urlparse
+import mimetypes
 import requests
 
 from lib.console import Console
@@ -50,12 +51,13 @@ class Exporter:
     """
 
     @staticmethod
-    def download_media(media, output_folder):
+    def download_media(media, output_folder, slugs=None):
         """
             Downloads the media files based on the given URLs
             
             :param media: the URLs as a list
             :param output_folder: the path to the folder where the files are being saved, it is assumed as existing
+            :param slugs: list of slugs to associate with media. The list must be ordered the same as media and should be the same size
             :return: the number of files wrote
         """
         files_number = 0
@@ -71,7 +73,13 @@ class Exporter:
                         local_path = os.path.join(local_path, el)
                         if not os.path.isdir(local_path):
                             os.mkdir(local_path)
-                local_path = os.path.join(local_path, http_path[-1])
+                if slugs is None:
+                    local_path = os.path.join(local_path, http_path[-1])
+                else:
+                    ext = mimetypes.guess_extension(r.headers['Content-Type'])
+                    local_path = os.path.join(local_path, slugs[progress])
+                    if ext is not None:
+                        local_path += ext
                 with open(local_path, "wb") as f:
                     i = 0
                     content_size = int(r.headers['Content-Length'])

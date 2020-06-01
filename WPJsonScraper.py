@@ -379,7 +379,7 @@ license, check LICENSE.txt for more information""")
         else:
             print("Pulling the media URLs")
 
-            media = scanner.get_media_urls('all', True)
+            media, _ = scanner.get_media_urls('all', True)
             if len(media) == 0:
                 Console.log_error("No media found")
                 return

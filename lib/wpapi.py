@@ -485,12 +485,14 @@ class WPApi:
                 except ValueError:
                     pass
         urls = []
+        slugs = []
         if media is None:
             return []
         for m in media:
-            if m is not None and type(m) is dict and "source_url" in m.keys():
+            if m is not None and type(m) is dict and "source_url" in m.keys() and 'slug' in m.keys():
                 urls.append(m["source_url"])
-        return urls
+                slugs.append(m['slug'])
+        return urls, slugs
             
 
     def get_pages(self, start=None, num=None, force=False):

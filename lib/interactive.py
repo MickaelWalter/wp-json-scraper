@@ -453,6 +453,7 @@ class InteractiveShell(cmd.Cmd):
         parser.add_argument("ids", help='ids to look for (comma separated), "all" or "cache"')
         parser.add_argument("dest", help='destination folder')
         parser.add_argument("--no-cache", dest="cache", action="store_false", help="don't lookup in cache and ask the server")
+        parser.add_argument("--use-slug", dest="slug", action="store_true", help="use the slug as filename and not the source URL name")
         args = parser.custom_parse_args(arg)
         if args is None:
             return
@@ -462,8 +463,7 @@ class InteractiveShell(cmd.Cmd):
             return
 
         print("Pulling the media URLs")
-
-        media = self.scanner.get_media_urls(args.ids, args.cache)
+        media, slugs = self.scanner.get_media_urls(args.ids, args.cache)
         if len(media) == 0:
             Console.log_error("No media found corresponding to the criteria")
             return
@@ -473,7 +473,11 @@ class InteractiveShell(cmd.Cmd):
             return
         print("Note: Only files over 10MB are logged here")
 
-        number_downloaded = Exporter.download_media(media, args.dest)
+        number_downloaded = 0
+        if args.slug:
+            number_downloaded = Exporter.download_media(media, args.dest, slugs)
+        else:
+            number_downloaded = Exporter.download_media(media, args.dest)
         print('Downloaded %d media to %s' % (number_downloaded, args.dest))
 
 def start_interactive(target, session, version):
