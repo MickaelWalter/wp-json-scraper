@@ -25,7 +25,10 @@ environment given that the following packages are installed:
 
 ## Installation
 
-Just clone the repository with git and run `pip install -r requirements.txt`
+Just clone the repository with git and run `pip install -r requirements.txt`.
+
+You may want to use a virtualenv for keeping your dependencies consistent across 
+Python projects.
 
 ## Usage
 
@@ -52,6 +55,7 @@ in these ones :
 * -t, --tags: list all tags
 * -c, --categories: list all categories
 * -m, --media: list all public media objects
+* --download-media MEDIA_FOLDER: download media to the designated folder
 * -g, --pages: list all public pages
 * -o, --comments: lists comments
 * -S, --search SEARCH_TERMS: performs a search on SEARCH_TERMS
@@ -62,6 +66,7 @@ crawl all namespaces
 server
 * --cookies COOKIES add specified Cookies to the requests
 * --no-color: remove color (for example to redirect the output to a file)
+* --interactive: start an interactive session
 
 Moreover, you can export contents of pages and posts to a folder in separate
 files:
@@ -105,9 +110,8 @@ the moment. Some of the features that could be implemented in the future are:
 
 * Posts revisions retrieval
 * Plugins support
-* Specific retrievals by id
 * Authentication support with NTLM
 * WordPress instance save as JSON (limited to the accessible scope) and restore?
 * Password-protected content handling
-* Support new endpoints added in version 5.0: autosaves, search, block type, blocks, block_renderer, themes (authenticated access required but WTF?)
+* Support new endpoints added in version 5.0: autosaves, block type, blocks, block_renderer, themes (authenticated access required but WTF?)
 * Write tests duh!
