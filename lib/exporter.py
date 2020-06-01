@@ -21,28 +21,488 @@ SOFTWARE.
 """
 
 import os
+import copy
 import html
+import json
+import csv
 from datetime import datetime
+from urllib import parse as urlparse
+import mimetypes
+import requests
 
 from lib.console import Console
-from lib.utils import get_by_id
+from lib.utils import get_by_id, print_progress_bar
 
 class Exporter:
     """
-    Utility functions to export data
+        Utility functions to export data
+    """
+    JSON = 1
+    """
+        Represents the JSON format for format choice
+    """
+    CSV = 2
+    """
+        Represents the CSV format for format choice
+    """
+    CHUNK_SIZE = 2048
+    """
+        The size of chunks to download large files
     """
 
     @staticmethod
-    def export_posts(posts, folder, tags_list=None, categories_list=None,
+    def download_media(media, output_folder, slugs=None):
+        """
+            Downloads the media files based on the given URLs
+            
+            :param media: the URLs as a list
+            :param output_folder: the path to the folder where the files are being saved, it is assumed as existing
+            :param slugs: list of slugs to associate with media. The list must be ordered the same as media and should be the same size
+            :return: the number of files wrote
+        """
+        files_number = 0
+        media_length = len(media)
+        progress = 0
+        for m in media:
+            r = requests.get(m, stream=True)
+            if r.status_code == 200:
+                http_path = urlparse.urlparse(m).path.split("/")
+                local_path = output_folder
+                if len(http_path) > 1:
+                    for el in http_path[:-1]:
+                        local_path = os.path.join(local_path, el)
+                        if not os.path.isdir(local_path):
+                            os.mkdir(local_path)
+                if slugs is None:
+                    local_path = os.path.join(local_path, http_path[-1])
+                else:
+                    ext = mimetypes.guess_extension(r.headers['Content-Type'])
+                    local_path = os.path.join(local_path, slugs[progress])
+                    if ext is not None:
+                        local_path += ext
+                with open(local_path, "wb") as f:
+                    i = 0
+                    content_size = int(r.headers['Content-Length'])
+                    for chunk in r.iter_content(Exporter.CHUNK_SIZE):
+                        if content_size > 10485706: # 10Mo
+                            print_progress_bar(i*Exporter.CHUNK_SIZE, content_size, prefix=http_path[-1], length=70)
+                        f.write(chunk)
+                        i += 1
+                    if content_size > 10485706: # 10Mo
+                            print_progress_bar(content_size, content_size, prefix=http_path[-1], length=70)
+                files_number += 1
+            progress += 1
+            if progress % 10 == 1:
+                print("Downloaded file %d of %d" % (progress, media_length))
+        return files_number
+
+    @staticmethod
+    def map_params(el, parameters_to_map):
+        """
+            Maps params to ids recursively.
+
+            This method automatically maps IDs with the correponding objects given in parameters_to_map. 
+            The mapping is made in place as el is passed as a reference.
+
+            :param el: the element that have ID references
+            :param parameters_to_map: a dict containing lists of elements to map by ids with el
+        """
+        for key, value in el.items():
+            if key in parameters_to_map.keys() and parameters_to_map[key] is not None:
+                if type(value) is int: # Only one ID to map
+                    obj = get_by_id(parameters_to_map[key], value)
+                    if obj is not None:
+                        el[key] = {
+                            'id': value,
+                            'details': obj
+                        }
+                elif type(value) is list: # The object is a list of IDs, we map each one
+                    vlist = []
+                    for v in value:
+                        obj = get_by_id(parameters_to_map[key], v)
+                        vlist.append(obj)
+                    el[key] = {
+                        'ids': value,
+                        'details': vlist
+                    }
+            elif value is dict:
+                Exporter.map_params(value, parameters_to_map)
+
+    @staticmethod
+    def setup_export(vlist, parameters_to_unescape, parameters_to_map):
+        """
+            Sets up the right values for a list export.
+
+            This function flattens alist of objects before its serialization in the expected format. 
+            It also makes a deepcopy to ensure that the original vlist is not altered.
+
+            :param vlist: the list to prepare for exporting
+            :param parameters_to_unescape: parameters to unescape (ex. ["param1", ["param2"]["rendered"]])
+            :param parameters_to_map: parameters to map to another (ex. {"param_to_map": param_values_list})
+        """
+        exported_list = []
+
+        for el in vlist:
+            if el is not None:
+                # First copy the object
+                exported_el = copy.deepcopy(el)
+                # Look for parameters to HTML unescape
+                for key in parameters_to_unescape:
+                    if type(key) is str: # If the parameter is at the root
+                        exported_el[key] = html.unescape(exported_el[key])
+                    elif type(key) is list: # If the parameter is nested
+                        selected = exported_el
+                        siblings = []
+                        fullpath = {}
+                        # We look for the leaf first, not forgetting sibling branches for rebuilding the tree later
+                        for k in key:
+                            if type(selected) is dict and k in selected.keys():
+                                sib = {}
+                                for e in selected.keys():
+                                    if e != k:
+                                        sib[e] = selected[e]
+                                selected = selected[k]
+                                siblings.append(sib)
+                            else:
+                                selected = None
+                                break
+                        # If we can unescape the parameter, we do it and rebuild the tree starting from the leaf
+                        if selected is not None and type(selected) is str:
+                            selected = html.unescape(selected)
+                            key.reverse()
+                            fullpath[key[0]] = selected
+                            s = len(siblings) - 1
+                            for e in siblings[s].keys():
+                                fullpath[e] = siblings[s][e]
+                            for k in key[1:]:
+                                fullpath = {k: fullpath}
+                                s -= 1
+                                for e in siblings[s].keys():
+                                    fullpath[e] = siblings[s][e]
+                            key.reverse()
+                            exported_el[key[0]] = fullpath[key[0]]
+                # If there is any parameter to map, we do it here
+                Exporter.map_params(exported_el, parameters_to_map)
+                # The resulting element is appended to the list of exported elements
+                exported_list.append(exported_el)
+
+        return exported_list
+
+    @staticmethod
+    def prepare_filename(filename, fmt):
+        """
+            Returns a filename with the proper extension according to the given format
+
+            :param filename: the filename to clean
+            :param fmt: the file format
+            :return: the cleaned filename
+        """
+        if filename[-5:] != ".json" and fmt == Exporter.JSON:
+            filename += ".json"
+        elif filename[-4:] != ".csv" and fmt == Exporter.CSV:
+            filename += ".csv"
+        return filename
+
+    @staticmethod
+    def write_file(filename, fmt, csv_keys, data, details=None):
+        """
+            Writes content to the given file using the given format.
+
+            The key mapping must be a dict of keys or lists of keys to ensure proper mapping.
+
+            :param filename: the path of the file
+            :param fmt: the format of the file
+            :param csv_keys: the key mapping
+            :param data: the actual data to export
+            :param details: the details keys to look for
+        """
+        with open(filename, "w", encoding="utf-8") as f:
+            if fmt == Exporter.JSON:
+                # The JSON format is straightforward, we dump the flattened objects to JSON
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            else:
+                # The CSV format requires some work, to select the most relevant information
+                fieldnames = csv_keys.keys()
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+                w.writeheader()
+                for el in data:
+                    el_csv = {}
+                    for key in csv_keys:
+                        # First we look for the key specified by csv_keys and select the corresponding leaf
+                        k = csv_keys[key]
+                        selected = None
+                        last_key = None
+                        if type(k) is str:
+                            last_key = k
+                            k = [k] 
+                        if k[0] in el.keys():
+                            selected = el[k[0]]
+                        else:
+                            el_csv[key] = ""
+                            continue
+                        if len(k) > 1:
+                            for subkey in k[1:]:
+                                if subkey in selected.keys():
+                                    selected = selected[subkey]
+                                    last_key = subkey
+                        # Once the leaf is selected, we verify if there is any kind of ID mapping and act accordingly
+                        if type(selected) is dict and 'id' in selected.keys() and 'details' in selected.keys() and last_key in details.keys():
+                            el_csv[key] = "%s (%d)" % (selected["details"][details[last_key]], selected["id"])
+                        elif type(selected) is not dict and type(selected) is not list:
+                            el_csv[key] = selected
+                        else:
+                            el_csv[key] = "unknown"
+                    # And we write the row
+                    w.writerow(el_csv)
+
+    @staticmethod
+    def export_posts(posts, fmt, filename, tags_list=None, categories_list=None, users_list=None):
+        """
+            Exports posts in specified format to specified file
+
+            :param posts: the posts to export
+            :param fmt: the export format (JSON or CSV)
+            :param tags_list: a list of tags to associate them with tag ids
+            :param categories_list: a list of categories to associate them with
+            category ids
+            :param user_list: a list of users to associate them with author id
+            :return: the length of the list written to the file
+        """
+        exported_posts = Exporter.setup_export(posts, 
+            [['title', 'rendered'], ['content', 'rendered'], ['excerpt', 'rendered']],
+            {
+                'author': users_list,
+                'categories': categories_list,
+                'tags': tags_list,
+            })
+        
+        filename = Exporter.prepare_filename(filename, fmt)
+        csv_keys = {
+            'id': 'id',
+            'date': 'date',
+            'modified': 'modified',
+            'status': 'status',
+            'link': 'link',
+            'title': ['title', 'rendered'],
+            'author': 'author'
+        }
+        details = {
+            'author': 'name',
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_posts, details)
+        return len(exported_posts)
+
+    @staticmethod
+    def export_categories(categories, fmt, filename, category_list=None):
+        """
+            Exports categories in specified format to specified file.
+
+            :param categories: the categories to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :param category_list: the list of categories to be used as parents
+            :return: the length of the list written to the file
+        """
+        exported_categories = Exporter.setup_export(categories, # TODO
+            [],
+            {
+                'parent': category_list,
+            })
+        
+        filename = Exporter.prepare_filename(filename, fmt)
+
+        csv_keys = {
+            'id': 'id',
+            'name': 'name',
+            'post_count': 'count',
+            'description': 'description',
+            'parent': 'parent'
+        }
+        details = {
+            'parent': 'name'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_categories, details)
+        return len(exported_categories)
+    
+    @staticmethod
+    def export_tags(tags, fmt, filename):
+        """
+            Exports tags in specified format to specified file
+
+            :param tags: the tags to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :return: the length of the list written to the file
+        """
+        filename = Exporter.prepare_filename(filename, fmt)
+        
+        exported_tags = tags # It seems that no modification will be done for this one, so no deepcopy
+        csv_keys = {
+            'id': 'id',
+            'name': 'name',
+            'post_count': 'post_count',
+            'description': 'description'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_tags)
+        return len(exported_tags)
+
+    @staticmethod
+    def export_users(users, fmt, filename):
+        """
+            Exports users in specified format to specified file.
+
+            :param users: the users to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :return: the length of the list written to the file
+        """
+        filename = Exporter.prepare_filename(filename, fmt)
+        
+        exported_users = users # It seems that no modification will be done for this one, so no deepcopy
+        csv_keys = {
+            'id': 'id',
+            'name': 'name', 
+            'link': 'link', 
+            'description': 'description'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_users)
+        return len(exported_users)
+
+    @staticmethod
+    def export_pages(pages, fmt, filename, parent_pages=None, users=None):
+        """
+            Exports pages in specified format to specified file.
+        
+            :param pages: the pages to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :param parent_pages: the list of all cached pages, to get parents
+            :param users: the list of all cached users, to get users
+            :return: the length of the list written to the file
+        """
+        exported_pages = Exporter.setup_export(pages,
+            [["guid", "rendered"], ["title", "rendered"], ["content", "rendered"], ["excerpt", "rendered"]],
+            {
+                'parent': parent_pages,
+                'author': users,
+            })
+        
+        filename = Exporter.prepare_filename(filename, fmt)
+        csv_keys = {
+            'id': 'id',
+            'title': ['title', 'rendered'],
+            'date': 'date',
+            'modified': 'modified',
+            'status': 'status',
+            'link': 'link',
+            'author': 'author',
+            'protected': ['content', 'protected']
+        }
+        details = {
+            'author': 'name'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_pages, details)
+        return len(exported_pages)
+
+    @staticmethod
+    def export_media(media, fmt, filename, users=None):
+        """
+            Exports media in specified format to specified file.
+
+            :param media: the media to export
+            :param fmt: the export format (JSON or CSV)
+            :param users: a list of users to associate them with author ids
+            :return: the length of the list written to the file
+        """
+        exported_media = Exporter.setup_export(media, 
+            [
+                ['guid', 'rendered'],
+                ['title', 'rendered'],
+                ['description', 'rendered'],
+                ['caption', 'rendered'],
+            ],
+            {
+                'author': users,
+            })
+        
+        filename = Exporter.prepare_filename(filename, fmt)
+        csv_keys = {
+            'id': 'id',
+            'title': ['title', 'rendered'],
+            'date': 'date',
+            'modified': 'modified',
+            'status': 'status',
+            'link': 'link',
+            'author': 'author',
+            'media_type': 'media_type'
+        }
+        details = {
+            'author': 'name'
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_media, details)
+        return len(exported_media)
+
+    @staticmethod
+    def export_namespaces(namespaces, fmt, filename):
+        """
+            **NOT IMPLEMENTED** Exports namespaces in specified format to specified file.
+
+            :param namespaces: the namespaces to export
+            :param fmt: the export format (JSON or CSV)
+            :return: the length of the list written to the file
+        """
+        Console.log_info("Namespaces export not available yet")
+        return 0
+
+    # FIXME to be refactored
+    @staticmethod
+    def export_comments_interactive(comments, fmt, filename, parent_posts=None, users=None):
+        """
+            Exports comments in specified format to specified file.
+
+            :param comments: the comments to export
+            :param fmt: the export format (JSON or CSV)
+            :param filename: the path to the file to write
+            :param parent_posts: the list of all cached posts, to get parent posts (not used yet because this could be too verbose)
+            :param users: the list of all cached users, to get users
+            :return: the length of the list written to the file
+        """
+        exported_comments = Exporter.setup_export(comments,
+            [["content", "rendered"]],
+            {
+                'post': parent_posts,
+                'author': users,
+            })
+        
+        # FIXME replacing the post ID by the post title in CSV mode doesn't work yet (nested keys)
+        filename = Exporter.prepare_filename(filename, fmt)
+        csv_keys = {
+            'id': 'id',
+            'post': 'post',
+            'date': 'date',
+            'status': 'status',
+            'link': 'link',
+            'author': 'author_name',
+        }
+        details = {
+            'post': ['title', 'rendered'] 
+        }
+        Exporter.write_file(filename, fmt, csv_keys, exported_comments, details)
+        return len(exported_comments)
+
+    # TODO deprecated, to be moved to export_posts when HTML will be supported
+    @staticmethod
+    def export_posts_html(posts, folder, tags_list=None, categories_list=None,
     users_list=None):
         """
-        Exports posts as HTML to specified export folder
-        param posts: the posts to export
-        param folder: the export folder
-        param tags_list: a list of tags to associate them with tag ids
-        param categories_list: a list of categories to associate them with
-        category ids
-        param user_list: a list of users to associate them with author id
+            Exports posts as HTML to specified export folder.
+        
+            :param posts: the posts to export
+            :param folder: the export folder
+            :param tags_list: a list of tags to associate them with tag ids
+            :param categories_list: a list of categories to associate them with category ids
+            :param user_list: a list of users to associate them with author id
+            :return: the length of the list written to the file
         """
         exported_posts = 0
 
@@ -53,7 +513,7 @@ class Exporter:
         for post in posts:
             post_file = None
             if 'slug' in post.keys():
-                post_file = open(os.path.join(folder, post['slug'],)+".html",
+                post_file = open(os.path.join(folder, post['slug'])+".html",
                 "wt", encoding="utf-8")
             else:
                 post_file = open(os.path.join(folder, str(post['id']))+".html",

@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from http.cookies import SimpleCookie
 import requests
 
 from lib.console import Console
@@ -74,12 +75,9 @@ class RequestSession:
         """
         self.s = requests.Session()
         if proxy is not None:
-            prot = 'http'
-            if proxy[:5].lower() == 'https':
-                prot = 'https'
-            self.s.proxies = {prot: proxy}
+            self.set_proxy(proxy)
         if cookies is not None:
-            self.s.headers.update({'Cookie': cookies})
+            self.set_cookies(cookies)
         if authorization is not None and (
             type(authorization) is tuple and len(authorization) == 2 or
             type(authorization) is requests.auth.HTTPBasicAuth or
@@ -155,3 +153,30 @@ class RequestSession:
             raise HTTPError
 
         return response
+    
+    def set_cookies(self, cookies):
+        """
+        Sets new cookies from a string
+        """
+        c = SimpleCookie()
+        c.load(cookies)
+        for key, m in c.items():
+            self.s.cookies.set(key, m.value)
+    
+    def get_cookies(self):
+        return self.s.cookies.get_dict()
+    
+    def set_proxy(self, proxy):
+        prot = 'http'
+        if proxy[:5].lower() == 'https':
+            prot = 'https'
+        self.s.proxies = {prot: proxy}
+    
+    def get_proxies(self):
+        return self.s.proxies
+    
+    def set_creds(self, credentials):
+        self.s.auth = credentials
+
+    def get_creds(self):
+        return self.s.auth

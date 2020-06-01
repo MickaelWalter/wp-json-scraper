@@ -25,6 +25,7 @@ SOFTWARE.
 import argparse
 import requests
 import re
+import os
 
 from lib.console import Console
 from lib.wpapi import WPApi
@@ -33,8 +34,9 @@ from lib.exceptions import NoWordpressApi, WordPressApiNotV2, \
                             NSNotFoundException
 from lib.exporter import Exporter
 from lib.requestsession import RequestSession
+from lib.interactive import start_interactive
 
-version = '0.4.1'
+version = '0.5'
 
 def main():
     parser = argparse.ArgumentParser(description=
@@ -113,6 +115,10 @@ license, check LICENSE.txt for more information""")
                         dest='comment_export_folder',
                         action='store',
                         help='export comments to a specified destination folder')
+    parser.add_argument('--download-media',
+                        dest='media_folder',
+                        action='store',
+                        help='download media to the designated folder')
     parser.add_argument('-r',
                         '--crawl-ns',
                         dest='crawl_ns',
@@ -151,6 +157,10 @@ license, check LICENSE.txt for more information""")
                         dest='nocolor',
                         action='store_true',
                         help='remove color in the output (e.g. to pipe it)')
+    parser.add_argument('--interactive',
+                        dest='interactive',
+                        action='store_true',
+                        help='start an interactive session')
 
 
     args = parser.parse_args()
@@ -205,8 +215,10 @@ license, check LICENSE.txt for more information""")
     session = RequestSession(proxy=proxy, cookies=cookies,
       authorization=authorization)
     try:
+        session.get(target)
         Console.log_success("Connection OK")
     except Exception as e:
+        Console.log_error("Failed to connect to the server")
         exit(0)
     
     # Quite an ugly check to launch a search on all parameters edible 
@@ -220,6 +232,10 @@ license, check LICENSE.txt for more information""")
         args.categories = True
         args.tags = True
         args.media = True
+
+    if args.interactive:
+        start_interactive(target, session, version)
+        return
 
     scanner = WPApi(target, session=session, search_terms=args.search)
     if args.info or args.all:
@@ -238,7 +254,7 @@ license, check LICENSE.txt for more information""")
                 Console.log_info("Post list with comments")
             else:
                 Console.log_info("Post list")
-            posts_list = scanner.get_all_posts(args.comments)
+            posts_list = scanner.get_posts(args.comments)
             InfoDisplayer.display_posts(posts_list, scanner.get_orphans_comments())
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -246,7 +262,7 @@ license, check LICENSE.txt for more information""")
     if args.pages or args.all:
         try:
             Console.log_info("Page list")
-            pages_list = scanner.get_all_pages()
+            pages_list = scanner.get_pages()
             InfoDisplayer.display_pages(pages_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -254,7 +270,7 @@ license, check LICENSE.txt for more information""")
     if args.users or args.all:
         try:
             Console.log_info("User list")
-            users_list = scanner.get_all_users()
+            users_list = scanner.get_users()
             InfoDisplayer.display_users(users_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -272,7 +288,7 @@ license, check LICENSE.txt for more information""")
     if args.categories or args.all:
         try:
             Console.log_info("Category list")
-            categories_list = scanner.get_all_categories()
+            categories_list = scanner.get_categories()
             InfoDisplayer.display_categories(categories_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -280,15 +296,16 @@ license, check LICENSE.txt for more information""")
     if args.tags or args.all:
         try:
             Console.log_info("Tags list")
-            tags_list = scanner.get_all_tags()
+            tags_list = scanner.get_tags()
             InfoDisplayer.display_tags(tags_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
+    media_list = None
     if args.media or args.all:
         try:
             Console.log_info("Media list")
-            media_list = scanner.get_all_media()
+            media_list = scanner.get_media()
             InfoDisplayer.display_media(media_list)
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
@@ -311,12 +328,12 @@ license, check LICENSE.txt for more information""")
 
     if args.post_export_folder is not None:
         try:
-            posts_list = scanner.get_all_posts()
-            tags_list = scanner.get_all_tags()
-            categories_list = scanner.get_all_categories()
-            users_list = scanner.get_all_users()
+            posts_list = scanner.get_posts()
+            tags_list = scanner.get_tags()
+            categories_list = scanner.get_categories()
+            users_list = scanner.get_users()
             print()
-            post_number = Exporter.export_posts(posts_list,
+            post_number = Exporter.export_posts_html(posts_list,
              args.post_export_folder,
              tags_list,
              categories_list,
@@ -329,10 +346,10 @@ license, check LICENSE.txt for more information""")
 
     if args.page_export_folder is not None:
         try:
-            pages_list = scanner.get_all_pages()
-            users_list = scanner.get_all_users()
+            pages_list = scanner.get_pages()
+            users_list = scanner.get_users()
             print()
-            page_number = Exporter.export_posts(pages_list,
+            page_number = Exporter.export_posts_html(pages_list,
              args.page_export_folder,
              None,
              None,
@@ -345,7 +362,7 @@ license, check LICENSE.txt for more information""")
     
     if args.comment_export_folder is not None:
         try:
-            post_list = scanner.get_all_posts(True)
+            post_list = scanner.get_posts(True)
             orphan_list = scanner.get_orphans_comments()
             print()
             page_number = Exporter.export_comments(post_list, orphan_list, args.comment_export_folder)
@@ -354,6 +371,23 @@ license, check LICENSE.txt for more information""")
                 (page_number, args.comment_export_folder))
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
+
+    if args.media_folder is not None:
+        Console.log_info("Downloading media files")
+        if not os.path.isdir(args.media_folder):
+            Console.log_error("The destination is not a folder or does not exist")
+        else:
+            print("Pulling the media URLs")
+
+            media, _ = scanner.get_media_urls('all', True)
+            if len(media) == 0:
+                Console.log_error("No media found")
+                return
+            print("%d media URLs found" % len(media))
+
+            print("Note: Only files over 10MB are logged here")
+            number_downloaded = Exporter.download_media(media, args.media_folder)
+            Console.log_success('Downloaded %d media to %s' % (number_downloaded, args.media_folder))
 
 
 if __name__ == "__main__":

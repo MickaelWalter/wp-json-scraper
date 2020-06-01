@@ -31,6 +31,8 @@ def get_by_id(value, id):
     param value: the dict to process
     param id: the id to get
     """
+    if value is None:
+        return None
     for val in value:
         if 'id' in val.keys() and val['id'] == id:
             return val
@@ -91,4 +93,7 @@ def get_content_as_json (response_obj):
         content = response_obj.content.decode("utf-8-sig")
         return json.loads(content)
     else:
-        return response_obj.json()
+        try:
+            return response_obj.json()
+        except:
+            return {}
