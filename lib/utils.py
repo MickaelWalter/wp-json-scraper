@@ -93,4 +93,7 @@ def get_content_as_json (response_obj):
         content = response_obj.content.decode("utf-8-sig")
         return json.loads(content)
     else:
-        return response_obj.json()
+        try:
+            return response_obj.json()
+        except:
+            return {}
