@@ -104,12 +104,15 @@ class RequestSession:
         Helper class to regroup requests and handle exceptions at the same
         location
         """
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.146 Safari/537.36'
+        }
         response = None
         try:
             if method == "post":
-                response = self.s.post(url, data)
+                response = self.s.post(url, data, headers=headers)
             else:
-                response = self.s.get(url)
+                response = self.s.get(url, data=None, header=headers)
         except requests.ConnectionError as e:
             if "Errno -5" in str(e) or "Errno -2" in str(e)\
               or "Errno -3" in str(e):
