@@ -162,7 +162,7 @@ class InteractiveShell(cmd.Cmd):
             obj_name = "Media"
         elif obj_type == WPApi.NAMESPACE:
             display_func = InfoDisplayer.display_namespaces
-            export_func = Exporter.export_media
+            export_func = Exporter.export_namespaces
             additional_info = {}
             obj_name = "Namespaces" if plural else "Namespace"
 
